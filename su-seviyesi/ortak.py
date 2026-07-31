@@ -148,18 +148,50 @@ def saatlik(s):
     return s[s.index.minute == 0]
 
 
-def coz(s, trend=True):
+# Uzun kayitlarda kullanilan bilesen listesi.
+#
+# UTide bileseni Rayleigh olcutune gore SECER: kayit uzadikca birbirine
+# yakin frekanslar ayrisabildigi icin cozulen bilesen sayisi artar. Bellek
+# ihtiyaci n x bilesen sayisi ile buyudugu icin 16.7 yillik kayitta cozum
+# oldurulmustu (SIGKILL).
+#
+# Asagidaki liste, makale penceresinde SNR > 2 cikan butun bilesenlerdir.
+# Yani bilgi kaybi yok: zaten anlamli olmayan bilesenler disarida kaliyor,
+# ama bellek birkac kat azaliyor.
+STANDART_BILESENLER = [
+    "M2", "S2", "N2", "K2", "K1", "O1", "P1", "S1", "SA", "SSA",
+    "L2", "H1", "H2", "NU2", "Q1", "T2", "MU2", "M3", "2N2", "NO1",
+    "GAM2", "R2", "MKS2", "OO1", "SK3", "J1", "LDA2", "EPS2", "PI1",
+    "ETA2", "MO3", "PHI1", "SO1", "CHI1", "S4", "MK4", "SO3", "MS4",
+    "2SM6", "M4", "M6", "MF", "MM", "MSF",
+]
+
+# Bu esigin uzerinde otomatik secim yerine yukaridaki liste kullanilir.
+# 341 bin nokta (10 yil) sorunsuz cozulurken 586 bin nokta (16.7 yil)
+# oldurulmustu; esik ikisinin arasina konuldu.
+BILESEN_SECIM_ESIGI = 400_000
+
+
+def coz(s, trend=True, constit=None):
     """UTide harmonik cozumu.
 
     DIKKAT: utide'a zaman DatetimeIndex olarak verilmelidir. matplotlib 3.3
     ile date2num'un epoch'u 1970'e tasindigi icin sayisal datenum yolu bu
     surumde sessizce cokuyor (hic bilesen bulunamiyor, genlikler 1e10
     cikiyor). datetime yolu dogru sonucu veriyor.
+
+    constit=None ise uzun kayitlarda STANDART_BILESENLER'e dusulur;
+    sebebi yukarida.
     """
     t = s.index.tz_localize(None)
+    if constit is None and len(s) > BILESEN_SECIM_ESIGI:
+        constit = STANDART_BILESENLER
+        print(f"  (uzun kayit: {len(s):,} nokta -> bilesen listesi "
+              f"{len(constit)} ile sinirlandi, bellek icin)")
+    ek = {"constit": constit} if constit is not None else {}
     return utide.solve(t, s.values, lat=ENLEM, method="ols",
                        conf_int="linear", nodal=True, trend=trend,
-                       verbose=False)
+                       verbose=False, **ek)
 
 
 def kur(s, coef, trend=True, constit=None, min_SNR=0):

@@ -7,3 +7,5 @@ utide
 requests
 truststore
 pillow
+xlsxwriter
+openpyxl

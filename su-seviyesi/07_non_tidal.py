@@ -276,12 +276,19 @@ def main():
         # Her donem biter bitmez yazilir/cizilir. En buyuk pencere dar
         # bellekli ortamlarda islemin oldurulmesine yol acabildigi icin,
         # sonda toplu yazmak tamamlanmis donemleri de kaybettiriyordu.
-        with open(TABLO / "03_nontidal_ozet.csv", "w", encoding="utf-8") as f:
-            f.write("donem,ortalama_cm,std_cm,min_cm,max_cm,aralik_cm,TD\n")
-            for k_, (i_, _) in ozet.items():
-                f.write(f"{k_},{i_['ortalama_cm']:.4f},{i_['std_cm']:.3f},"
-                        f"{i_['min_cm']:.2f},{i_['max_cm']:.2f},"
-                        f"{i_['aralik_cm']:.2f},{i_['TD']:.4f}\n")
+        # Donem basina ayri surecte calisildigi icin tabloya EKLENIR;
+        # dogrudan yazmak onceki donemleri siliyordu.
+        yeni = pd.DataFrame([{"donem": k_, **{a: i_[a] for a in
+                                              ("ortalama_cm", "std_cm",
+                                               "min_cm", "max_cm",
+                                               "aralik_cm", "TD")}}
+                             for k_, (i_, _) in ozet.items()])
+        p_oz = TABLO / "03_nontidal_ozet.csv"
+        if p_oz.exists():
+            eski = pd.read_csv(p_oz)
+            eski = eski[~eski.donem.isin(yeni.donem)]
+            yeni = pd.concat([eski, yeni], ignore_index=True)
+        yeni.round(4).to_csv(p_oz, index=False)
         with open(TABLO / f"04_nontidal_yuzdelikler_{slug(ad)}.csv", "w",
                   encoding="utf-8") as f:
             f.write("yuzdelik,seviye_cm\n")

@@ -36,7 +36,26 @@ except Exception:
     pass
 
 CIKTI = Path(__file__).resolve().parent / "BOZYAZI_SU_SEVIYESI.xlsx"
-SLUG = "makale_penceresi"
+
+# Donem kodu SABIT YAZILMAZ, diskten bulunur.
+#
+# Betikler donem kodunu cagirma bicimine gore uretiyor: dogrudan
+# calistirildiginda "makale_penceresi", 13_donem_kosucu.py'den
+# calistirildiginda "makale"/"son5"/"son10"/"tum". Kod burada sabit
+# yazildiginda dosya adlari tutmuyor ve sayfalar SESSIZCE bos kaliyordu
+# (gelgit duzeyleri, PDF/CDF verisi ve grafigi, yuzdelikler, gomulu
+# figurler, 01_VERI'nin gelgit ve artik sutunlari).
+SLUG = "makale"
+KODLAR = [SLUG]
+
+
+def donem_kodlari():
+    """Diskteki ciktilardan hangi donemlerin uretildigini bulur."""
+    k = {p.stem.replace("02_gelgit_duzeyleri_", "")
+         for p in TABLO.glob("02_gelgit_duzeyleri_*.csv")}
+    sira = {"makale": 0, "makale_penceresi": 0, "son5": 1, "son10": 2,
+            "tum": 3}
+    return sorted(k, key=lambda x: (sira.get(x, 9), x))
 
 
 def guvenli_oku(ad):
@@ -61,6 +80,17 @@ def resim_ekle(ws, satir, sutun, png, olcek=0.62):
 
 
 def main():
+    global SLUG, KODLAR
+    KODLAR = donem_kodlari()
+    if KODLAR:
+        SLUG = KODLAR[0]
+        print(f"bulunan donemler: {', '.join(KODLAR)}")
+        print(f"birincil donem  : {SLUG}")
+    else:
+        KODLAR = [SLUG]
+        print(f"UYARI: tables/ altinda donem ciktisi yok, '{SLUG}' "
+              f"varsayiliyor. Once 13_donem_kosucu.py calistirilmali.")
+
     print("veriler okunuyor...")
     ham = guvenli_oku("bozyazi_ham.dat")
     temiz = guvenli_oku("bozyazi_temiz.dat")
@@ -202,30 +232,36 @@ def main():
                    "Kaynak: 05_harmonik_analiz.py", bic["not"])
     ws.set_row(r, 26); r += 2
 
-    # --- once hocanin istedigi bicimde (Famagusta Tablo 2-2) ---
-    fam = csv_oku(f"09_famagusta_bicimi_{SLUG}.csv")
-    if fam is None:
-        fam = csv_oku("09_famagusta_bicimi_makale.csv")
-    if fam is not None:
+    # --- hocanin istedigi bicimde (Famagusta Tablo 2-2), BUTUN DONEMLER ---
+    fams = {k: csv_oku(f"09_famagusta_bicimi_{k}.csv") for k in KODLAR}
+    fams = {k: v for k, v in fams.items() if v is not None}
+    if fams:
         ws.write(r, 0, "Hocanin istedigi bicimde (Famagusta Tablo 2-2)",
                  bic["alt"]); r += 1
-        for j, b in enumerate(fam.columns):
-            ws.write(r, j, str(b), bic["bas"])
+        ws.write(r, 0, "Her donem icin ayri ayri. Gelgit astronomik bir "
+                       "olgu oldugu icin genlikler donemden doneme "
+                       "neredeyse degismemeli.", bic["not"])
+        ws.set_row(r, 26); r += 1
+        ws.write(r, 0, "Bilesen", bic["bas"])
+        for i, k in enumerate(fams):
+            ws.merge_range(r - 1, 1 + 2 * i, r - 1, 2 + 2 * i, k, bic["bas"])
+            ws.write(r, 1 + 2 * i, "Genlik [m]", bic["bas"])
+            ws.write(r, 2 + 2 * i, "Faz [deg]", bic["bas"])
         r += 1
-        for _, s in fam.iterrows():
-            ws.write(r, 0, str(s.iloc[0]), bic["met"])
-            for j in (1, 2):
-                v = s.iloc[j]
-                if pd.notna(v):
-                    ws.write_number(r, j, float(v),
-                                    bic["s4"] if j == 1 else bic["s1"])
+        ilk = next(iter(fams.values()))
+        for idx in range(len(ilk)):
+            ws.write(r, 0, str(ilk.iloc[idx, 0]), bic["met"])
+            for i, d_ in enumerate(fams.values()):
+                for j, sut in enumerate(("Amplitude [m]", "Phase [deg]")):
+                    v = d_.iloc[idx][sut] if idx < len(d_) else None
+                    if pd.notna(v):
+                        ws.write_number(r, 1 + 2 * i + j, float(v),
+                                        bic["s4"] if j == 0 else bic["s1"])
             r += 1
         r += 2
 
     ws.write(r, 0, "Cozulen butun bilesenler", bic["alt"]); r += 1
     bil = csv_oku(f"01_gelgit_bilesenleri_{SLUG}.csv")
-    if bil is None:
-        bil = csv_oku("01_gelgit_bilesenleri_makale.csv")
     if bil is not None:
         bas = ["Bilesen", "Genlik (m)", "Genlik (cm)", "Hata (cm)",
                "Faz (derece)", "SNR", "Makale (cm)"]
@@ -263,22 +299,43 @@ def main():
                    "Kaynak: 06_gelgit_seviyeleri.py", bic["not"])
     ws.set_row(r, 32); r += 2
 
-    duz = csv_oku("02_gelgit_duzeyleri.csv")
-    if duz is not None:
-        bas = ["Duzey", "Aciklama", "m (MSL'e gore)",
-               "m (mevsimsel haric)", "formul (m)", "m (istasyon datumu)"]
-        for j, b in enumerate(bas):
-            ws.write(r, j, b, bic["bas"])
+    duzs = {k: csv_oku(f"02_gelgit_duzeyleri_{k}.csv") for k in KODLAR}
+    duzs = {k: v for k, v in duzs.items() if v is not None}
+    if not duzs:
+        d0 = csv_oku("02_gelgit_duzeyleri.csv")
+        if d0 is not None:
+            duzs = {SLUG: d0}
+    if duzs:
+        ws.write(r, 0, "Butun donemler icin, MSL'e gore (m)", bic["alt"])
         r += 1
-        for _, s in duz.iterrows():
-            ws.write(r, 0, s.duzey, bic["met"])
-            ws.write(r, 1, s.aciklama, bic["met"])
-            ws.write_number(r, 2, s.su_seviyesi_m_MSL, bic["vur"])
-            for j, k in enumerate(["su_seviyesi_m_MSL_mevsimsel_haric",
-                                   "formul_m_MSL", "istasyon_datumu_m"], 3):
-                v = s.get(k)
+        ws.write(r, 0, "Duzey", bic["bas"])
+        ws.write(r, 1, "Aciklama", bic["bas"])
+        for i, k in enumerate(duzs):
+            ws.write(r, 2 + 2 * i, f"{k}", bic["bas"])
+            ws.write(r, 3 + 2 * i, f"{k} (mevsimsiz)", bic["bas"])
+        son = 2 + 2 * len(duzs)
+        ws.write(r, son, "formul (m)", bic["bas"])
+        ws.write(r, son + 1, f"{SLUG} istasyon datumu (m)", bic["bas"])
+        r += 1
+        ilk = next(iter(duzs.values()))
+        for idx in range(len(ilk)):
+            s0 = ilk.iloc[idx]
+            ws.write(r, 0, s0.duzey, bic["met"])
+            ws.write(r, 1, s0.aciklama, bic["met"])
+            for i, d_ in enumerate(duzs.values()):
+                sr = d_[d_.duzey == s0.duzey]
+                if not len(sr):
+                    continue
+                sr = sr.iloc[0]
+                ws.write_number(r, 2 + 2 * i, float(sr.su_seviyesi_m_MSL),
+                                bic["vur"])
+                v = sr.get("su_seviyesi_m_MSL_mevsimsel_haric")
                 if pd.notna(v):
-                    ws.write_number(r, j, float(v), bic["s3"])
+                    ws.write_number(r, 3 + 2 * i, float(v), bic["s3"])
+            for j, k in enumerate(["formul_m_MSL", "istasyon_datumu_m"]):
+                v = s0.get(k)
+                if pd.notna(v):
+                    ws.write_number(r, son + j, float(v), bic["s3"])
             r += 1
         r += 1
         ws.write(r, 0, "SA (yillik) ve SSA (yarim yillik) bu istasyonda "
@@ -399,16 +456,33 @@ def main():
                      "(istasyon konumu yildizla):", bic["alt"])
 
     r += 1
-    yuz = csv_oku(f"04_nontidal_yuzdelikler_{SLUG}.csv")
-    if yuz is not None:
-        ws.write(r, 0, "Yuzdelikler", bic["alt"]); r += 1
-        for j, b in enumerate(["Yuzdelik (%)", "Seviye (cm)", "Seviye (m)"]):
-            ws.write(r, j, b, bic["bas"])
+    yuzs = {k: csv_oku(f"04_nontidal_yuzdelikler_{k}.csv") for k in KODLAR}
+    yuzs = {k: v for k, v in yuzs.items() if v is not None}
+    if yuzs:
+        ws.write(r, 0, "Asilma yuzdelikleri (cm) - butun donemler",
+                 bic["alt"]); r += 1
+        ws.write(r, 0, "Hocanin sordugu 'ortalama' yerine dagilimi temsil "
+                       "eden buyukluk budur. Ornek: %95 satiri, seviyenin "
+                       "zamanin %95'inde bu degerin altinda kaldigini "
+                       "gosterir.", bic["not"])
+        ws.set_row(r, 26); r += 1
+        ws.write(r, 0, "Yuzdelik (%)", bic["bas"])
+        for i, k in enumerate(yuzs):
+            ws.write(r, 1 + i, f"{k} (cm)", bic["bas"])
+        ws.write(r, 1 + len(yuzs), f"{SLUG} (m)", bic["bas"])
         r += 1
-        for _, s in yuz.iterrows():
-            ws.write_number(r, 0, float(s.yuzdelik), bic["s1"])
-            ws.write_number(r, 1, float(s.seviye_cm), bic["s2"])
-            ws.write_number(r, 2, float(s.seviye_cm) / 100.0, bic["s4"])
+        ilk = next(iter(yuzs.values()))
+        for idx in range(len(ilk)):
+            p_ = float(ilk.iloc[idx].yuzdelik)
+            ws.write_number(r, 0, p_, bic["s1"])
+            for i, d_ in enumerate(yuzs.values()):
+                sr = d_[d_.yuzdelik == p_]
+                if len(sr):
+                    ws.write_number(r, 1 + i, float(sr.iloc[0].seviye_cm),
+                                    bic["s2"])
+            ws.write_number(r, 1 + len(yuzs),
+                            float(ilk.iloc[idx].seviye_cm) / 100.0,
+                            bic["s4"])
             r += 1
 
     # ---------------------------------------------------------------- 05
@@ -434,6 +508,36 @@ def main():
         ws.write_number(r, 1, float(yil[y]), bic["s4"])
         ws.write_number(r, 2, int(say[y]), bic["tam"])
         r += 1
+
+    # --- donemler yan yana ---
+    dk = csv_oku("10_donem_karsilastirma.csv")
+    if dk is not None and len(dk) > 1:
+        r += 2
+        ws.write(r, 0, "Ayni analiz farkli donemlerde", bic["alt"]); r += 1
+        ws.write(r, 0, "Gelgit bilesenleri (M2, F) donemden doneme "
+                       "neredeyse degismez -- gelgit astronomik bir "
+                       "olgudur. Gelgit DISI istatistikler ise "
+                       "meteorolojiye bagli oldugu icin degisir. Kaynak: "
+                       "13_donem_kosucu.py", bic["not"])
+        ws.set_row(r, 32); r += 1
+        sut = ["donem", "yil", "olcum", "MSL_m", "M2_m", "F",
+               "nontidal_std_cm", "TD", "nontidal_aralik_cm"]
+        basl = ["Donem", "Yil", "Olcum", "MSL (m)", "M2 (m)", "F",
+                "Gelgit disi std (cm)", "TD", "Azami aralik (cm)"]
+        for j, b in enumerate(basl):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        for _, s in dk.iterrows():
+            for j, k in enumerate(sut):
+                v = s.get(k)
+                if isinstance(v, str):
+                    ws.write(r, j, v, bic["met"])
+                elif pd.notna(v):
+                    ws.write_number(r, j, float(v),
+                                    bic["tam"] if k == "olcum"
+                                    else bic["s4"] if k in ("MSL_m", "M2_m")
+                                    else bic["s3"])
+            r += 1
 
     # --- azami araligin yillik oynamasi ---
     yl = csv_oku("07_yillik_azami_aralik.csv")
@@ -507,13 +611,18 @@ def main():
     ws.set_column(0, 0, 4)
     r = 0
     ws.write(r, 1, "Uretilen figurler", bic["baslik"]); r += 2
-    for png, baslik in [
-        (f"01_nontidal_pdf_cdf_{SLUG}.png",
-         "Gelgit disi su seviyesi - PDF / CDF (makaledeki gibi 10 kutu)"),
-        (f"01b_nontidal_pdf_cdf_ince_{SLUG}.png",
-         "Ayni dagilim, ince kutulama (2 cm)"),
-        (f"02_nontidal_zaman_serisi_{SLUG}.png",
-         "Gelgit disi su seviyesinin zaman serisi"),
+    figurler = []
+    for k in KODLAR:
+        figurler += [
+            (f"01_nontidal_pdf_cdf_{k}.png",
+             f"[{k}] Gelgit disi su seviyesi - PDF / CDF "
+             f"(makaledeki gibi 10 kutu)"),
+            (f"01b_nontidal_pdf_cdf_ince_{k}.png",
+             f"[{k}] Ayni dagilim, ince kutulama (2 cm)"),
+            (f"02_nontidal_zaman_serisi_{k}.png",
+             f"[{k}] Gelgit disi su seviyesinin zaman serisi"),
+        ]
+    for png, baslik in figurler + [
         ("03_istasyon_karsilastirma.png",
          "Levantin kiyisi istasyonlari - yillik ortalama seviye"),
         ("00_dogrulama_temmuz2025.png",
