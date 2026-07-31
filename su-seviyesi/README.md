@@ -1,8 +1,13 @@
 # Bozyazı deniz seviyesi analizi
 
+[![Colab'da aç](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/colab_baslat.ipynb)
+
 Bozyazı mareograf istasyonunun (TUDES / Harita Genel Müdürlüğü, istasyon
 id 11) deniz seviyesi kaydından gelgit ve gelgit dışı bileşenlerin
 çıkarılması.
+
+Yukarıdaki düğme defteri doğrudan Colab'da açar. Çalıştırmadan önce
+**yüksek RAM** çalışma zamanına geçin.
 
 Konum: 36.104° K, 32.948° D — Levantin (Doğu Akdeniz) kıyısı.
 
