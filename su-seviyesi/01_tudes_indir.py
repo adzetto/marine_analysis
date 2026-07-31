@@ -75,8 +75,14 @@ ISTASYONLAR = {
 ISTASYON_ADI = "bozyazi"          # varsayilan; komut satirindan degistirilir
 ISTASYON = ISTASYONLAR[ISTASYON_ADI]
 
-# Portalda Bozyazi icin en eski veri 2010 basi. Bugune kadar indirilir.
-BASLANGIC = dt.date(2010, 1, 1)
+# Portalda Bozyazi kaydi 1 TEMMUZ 2009'da basliyor (2009-06 ve oncesi
+# "Veri bulunamadi" donuyor, 2009-07 %82.8 dolu, 2009-08'den itibaren %100).
+#
+# Not: ilk taramada her yil icin 1 Mart-29 Nisan penceresi denenmis ve 2009
+# "yok" gorunmustu; o tarihte kayit henuz baslamadigi icin. Ay ay sinanunca
+# Temmuz 2009'dan itibaren veri oldugu goruldu. Bu alti ay makalenin
+# penceresine giriyor ve Kasim-Aralik firtina mevsimini iceriyor.
+BASLANGIC = dt.date(2009, 7, 1)
 BITIS = dt.date.today()
 
 PARCA_GUN = 55           # 60 gun sinirinin altinda guvenli pay

@@ -25,7 +25,12 @@ except Exception:
     pass
 
 BASE = Path(__file__).resolve().parent
-HAM = BASE / "data" / "ham"
+# 01_tudes_indir.py parcalari istasyon adina gore ayri klasore yaziyor
+# (komsu istasyonlar da indirilebildigi icin). Eski duz yerlesim de
+# desteklenir ki elde onceden inmis veri varsa calismaya devam etsin.
+HAM = BASE / "data" / "ham" / "bozyazi"
+if not HAM.exists():
+    HAM = BASE / "data" / "ham"
 HOCA = BASE / "tudes_raw" / "tudes"
 CIKTI = BASE / "data" / "bozyazi_ham.dat"
 

@@ -42,15 +42,17 @@ GUNLUK = ["K1", "O1", "P1", "S1"]
 
 # Birincil analiz donemi: makalenin Bozyazi penceresi.
 #
-# Makale 01.01.2009-13.03.2018 kullanmis. Portalda Bozyazi kaydi 2010
-# basinda basladigi icin 2009 alinamiyor; bitis tarihi makaleyle birebir
-# ayni tutuluyor. Boylece sonuclar yayimlanmis degerlerle dogrudan
-# karsilastirilabilir oluyor.
+# Makale 01.01.2009-13.03.2018 kullanmis. Portalda Bozyazi kaydi 1 Temmuz
+# 2009'da basliyor (2009-06 ve oncesi "Veri bulunamadi"), yani makalenin
+# ilk alti ayi alinamiyor. Baslangic portalin verebildigi en erken tarihe,
+# bitis makaleyle birebir ayni tarihe konuldu; boylece ortusme en genis
+# haliyle 8.7 yil oluyor ve sonuclar yayimlanmis degerlerle dogrudan
+# karsilastirilabiliyor.
 #
 # Bu ayni zamanda kaydin en saglam bolumu: 2010-2019 doluluk %99.7-100,
 # buna karsilik 2023'te -371/+776 m gibi okumalar, 2024'te saatlerce suren
 # kaymis blok, 2025-2026'da %93 ve %79 doluluk var.
-PAPER_BAS = "2010-01-01"
+PAPER_BAS = "2009-07-01"
 PAPER_BIT = "2018-03-13"
 
 DONEMLER = [
@@ -87,17 +89,28 @@ def veri_yolu(dosya):
 
 
 def yaz(seri, dosya, basliklar):
-    """Seriyi .dat.gz olarak yazar."""
+    """Seriyi .dat.gz olarak yazar.
+
+    Ayni adin sikistirilmamis surumu varsa SILINIR. Aksi halde veri_yolu()
+    onu tercih edip yeni yazilan .gz'i golgeliyor; betikler sessizce eski
+    veriyle calisiyor. (Bir kez basimiza geldi: 2009 verisi eklendigi halde
+    ayiklama eski kaydi okumaya devam etti.)
+    """
     import gzip
     VERI.mkdir(parents=True, exist_ok=True)
-    with gzip.open(VERI / (dosya + ".gz"), "wt", encoding="utf-8") as f:
+    hedef = VERI / (dosya + ".gz")
+    with gzip.open(hedef, "wt", encoding="utf-8") as f:
         for b in basliklar:
             f.write(f"# {b}\n")
         f.write("# yil ay gun saat dakika seviye_m\n")
         for t, v in seri.items():
             f.write(f"{t.year} {t.month:2d} {t.day:2d} {t.hour:2d} "
                     f"{t.minute:2d} {v:9.4f}\n")
-    return VERI / (dosya + ".gz")
+    duz = VERI / dosya
+    if duz.exists():
+        duz.unlink()
+        print(f"  (eski sikistirilmamis {duz.name} silindi)")
+    return hedef
 
 
 def oku(dosya="bozyazi_temiz.dat"):

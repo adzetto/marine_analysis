@@ -149,17 +149,19 @@ def main():
     print("\n" + "=" * 74)
     print("ORTALAMA DENIZ SEVIYESI (MSL)")
     print("=" * 74)
+    from ortak import PAPER_BAS, PAPER_BIT, kes
     donemler = {
-        "tum kayit  2010-2026": (2010, 2026),
+        f"MAKALE PENCERESI {PAPER_BAS[:7]}..{PAPER_BIT[:7]}":
+            (PAPER_BAS, PAPER_BIT),
+        "tum kayit": (2009, 2026),
         "temiz on yil  2010-2019": (2010, 2019),
-        "makale penceresi 2010-2018": (2010, 2018),
         "son bes yil  2021-2025": (2021, 2025),
     }
     msl = {}
     for ad, (a, b) in donemler.items():
-        x = s_i[(s_i.index.year >= a) & (s_i.index.year <= b)]
+        x = kes(s_i, a, b)
         msl[ad] = x.mean()
-        print(f"  {ad:<30} MSL = {x.mean():.4f} m   "
+        print(f"  {ad:<34} MSL = {x.mean():.4f} m   "
               f"(n={int(x.notna().sum()):,}, std {x.std():.4f})")
 
     print("\n  yillik ortalama:")

@@ -23,10 +23,11 @@ Konum: 36.104° K, 32.948° D — Levantin (Doğu Akdeniz) kıyısı.
 
 ## Analiz dönemi
 
-Birincil ve tek analiz dönemi **01.01.2010 – 13.03.2018**, yani makalenin
-Bozyazı penceresi. Makale 2009'da başlıyor ama portalda Bozyazı kaydı 2010
-başında başlıyor; bitiş tarihi makaleyle birebir aynı tutuldu ki sonuçlar
-yayımlanmış değerlerle doğrudan karşılaştırılabilsin.
+Birincil ve tek analiz dönemi **01.07.2009 – 13.03.2018**, yani makalenin
+Bozyazı penceresiyle örtüşebilen en geniş aralık. Makale 01.01.2009'da
+başlıyor ama portalda kayıt Temmuz 2009'da başladığı için ilk altı ay
+alınamıyor; bitiş tarihi makaleyle birebir aynı tutuldu ki sonuçlar
+yayımlanmış değerlerle doğrudan karşılaştırılabilsin. Örtüşme 8,7 yıl.
 
 Bu aynı zamanda kaydın en sağlam bölümü (aşağıya bakınız). Başka pencereler
 gerekirse `ortak.EK_DONEMLER` içinde hazır duruyor.
@@ -38,7 +39,9 @@ Portal `POST /Portal/VeriSorgula` uç noktasıyla JSON döndürüyor; sayfadaki
 kullanılmıyor. Tek istekte en fazla **60 gün** alınabiliyor, bu yüzden kayıt
 55 günlük parçalar hâlinde indirilip birleştiriliyor.
 
-Kapsam: **2010-01-01 → bugün**, ~566.000 kayıt, %97,4 doluluk.
+Kapsam: **2009-07-06 → bugün**, 583.165 kayıt, %97,4 doluluk. Portalda
+Bozyazı kaydı 1 Temmuz 2009'da başlıyor; 2009-06 ve öncesi için
+"Veri bulunamadı" dönüyor.
 
 Veri kalitesi yıllara göre çok değişiyor:
 
