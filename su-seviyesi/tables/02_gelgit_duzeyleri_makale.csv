@@ -1,0 +1,12 @@
+duzey,aciklama,su_seviyesi_m_MSL,su_seviyesi_m_MSL_mevsimsel_haric,formul_m_MSL,istasyon_datumu_m
+HAT,En yuksek astronomik gelgit,0.3314,0.2193,,1.8201
+MHWS,Bahar gelgiti ortalama yuksek su,0.1551,,0.1518,1.6438
+MHHW,Ortalama yuksek-yuksek su,0.1296,,,1.6183
+MHW,Ortalama yuksek su,0.1075,,,1.5962
+MHWN,Olusum gelgiti ortalama yuksek su,0.0389,,0.0401,1.5276
+MSL,Ortalama deniz seviyesi,0.0000,,0.0000,1.4887
+MLWN,Olusum gelgiti ortalama alcak su,-0.0464,,-0.0401,1.4423
+MLW,Ortalama alcak su,-0.1077,,,1.3810
+MLLW,Ortalama alcak-alcak su,-0.1198,,,1.3689
+MLWS,Bahar gelgiti ortalama alcak su,-0.1559,,-0.1518,1.3329
+LAT,En dusuk astronomik gelgit,-0.2946,-0.2031,,1.1941
