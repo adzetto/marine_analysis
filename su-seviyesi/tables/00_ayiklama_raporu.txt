@@ -1,0 +1,16 @@
+BOZYAZI SEVIYE VERISI - AYIKLAMA RAPORU
+============================================================
+ham dolu olcum : 565,482
+  1) |x - medyan| > 2.0 m                              2,067
+  2) 30 gun medyanindan > 0.8 m sapma                  1,508
+  3.1) kisa medyandan sapma > 0.100 m (robust sigma 0.0000)   4,610
+  3.2) kisa medyandan sapma > 0.100 m (robust sigma 0.0000)     252
+  4) ayni deger 12+ kez ust uste (takilma)             6,607
+toplam atilan  : 15,044 (%2.660)
+kalan          : 550,438
+interpolasyon  : +18,239
+
+MSL tum kayit  2010-2026           = 1.5149 m
+MSL temiz on yil  2010-2019        = 1.4813 m
+MSL makale penceresi 2010-2018     = 1.4827 m
+MSL son bes yil  2021-2025         = 1.5739 m

@@ -1,0 +1,21 @@
+# Ham indirme onbellegi ve turetilen buyuk veri dosyalari.
+# 01_tudes_indir.py bunlari birkac dakikada yeniden uretir, bu yuzden depoda
+# tutulmalarina gerek yok. Ayrica TUDES verisi portalda bir lisans/telif
+# sozlesmesi onaylanarak indiriliyor; toplu veriyi ACIK bir depoya koymak
+# o sozlesmenin kapsami disina cikabilir.
+data/ham/
+data/*.dat
+data/*.npy
+
+# Elsevier telifli makale - acik depoya konulamaz.
+yalcinyuksel-2023.pdf
+
+# Yazisma ekran goruntuleri (ozel icerik) ve hocanin gonderdigi ham arsiv.
+*.jpeg
+*.jpg
+tudes_raw/
+tudes.rar
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

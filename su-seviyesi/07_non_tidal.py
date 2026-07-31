@@ -1,0 +1,251 @@
+"""
+07_non_tidal.py
+===============
+Gelgit disi (non-tidal) su seviyesi bilesenini cikarir ve karakterize eder.
+
+    artik(t) = olculen(t) - ongorulen gelgit(t)
+
+Geriye kalan, meteorolojik (ruzgar kabarmasi, basinc) ve hidrolojik
+etkilerdir. Hocanin "gelgitin disinda firtina ile yukselen su seviyesi"
+dedigi buyuk budur.
+
+Hocanin talebi uzerine bir not
+------------------------------
+Hoca "129 cm gibi bir kez olmus max degil, ORTALAMA lazim" dedi. Ancak
+non-tidal artigin ortalamasi TANIMI GEREGI sifirdir: seriden hem gelgit hem
+de ortalama seviye cikarilmistir. Nitekim makalenin kendi Tablo 3'unde
+"Mean" sutunu butun 18 istasyon icin tek bir deger olarak "≈0" yazilmistir.
+Yani duz ortalama, tasarim icin bilgi tasimaz.
+
+Muhendislikte bu dagilimi temsil eden buyukluk STANDART SAPMADIR (makale
+Tablo 3'te Bozyazi icin 10.43 cm) ve asilma yuzdeleridir. Bu yuzden burada
+ortalama da (sifira yakinligini gostermek icin) hesaplanir, ama asil olarak
+standart sapma, yuzdelikler ve asilma olasiliklari verilir. Hocanin ikinci
+secenegi olan "paperdaki plot" (Fig. 6 PDF/CDF) da uretilir; zaten dogru
+sorunun cevabi odur.
+
+TD (gelgit baskinlik orani), makale Denk. 3:
+    TD = sqrt( sum(gelgit^2) / sum(artik^2) )  =  RMS_gelgit / RMS_artik
+Makale Bozyazi icin 1.06 vermis.
+
+Calistirma: python 07_non_tidal.py
+"""
+
+import sys
+
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import scienceplots  # noqa: F401
+
+from ortak import (FIG, TABLO, DONEMLER, MAKALE_NONTIDAL_MAX,
+                   MAKALE_NONTIDAL_STD, MAKALE_TD, bilesen_sozlugu, coz, kes,
+                   kur, oku)
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
+DPI = 300
+BIN_M = 0.02                 # histogram kutu genisligi (2 cm)
+YUZDELIK = [0.1, 1, 5, 10, 25, 50, 75, 90, 95, 99, 99.9]
+
+def latex_var():
+    """Sistemde calisan bir LaTeX kurulumu var mi?
+
+    Figurler LaTeX dizgisiyle uretiliyor, ama Colab gibi ortamlarda texlive
+    kurulu olmayabiliyor. Varligi denenmeden kabul edilirse betik figure
+    asamasinda cokuyor; bu yuzden once sinaniyor ve yoksa matplotlib'in
+    kendi matematik dizgisine duruluyor.
+    """
+    from shutil import which
+    if not (which("latex") and which("dvipng")):
+        return False
+    try:
+        import matplotlib.pyplot as _p
+        _p.rcParams["text.usetex"] = True
+        f = _p.figure()
+        f.text(0.5, 0.5, r"$\eta_{nt}$")
+        f.canvas.draw()
+        _p.close(f)
+        return True
+    except Exception:
+        _p.rcParams["text.usetex"] = False
+        return False
+
+
+plt.style.use(["science", "grid"])
+LATEX = latex_var()
+plt.rcParams.update({
+    "text.usetex": LATEX,
+    "font.family": "serif",
+    "figure.dpi": DPI, "savefig.dpi": DPI, "savefig.bbox": "tight",
+    "axes.labelsize": 9, "axes.titlesize": 9,
+    "xtick.labelsize": 8, "ytick.labelsize": 8, "legend.fontsize": 8,
+})
+print(f"LaTeX dizgisi: {'acik' if LATEX else 'KAPALI (texlive yok)'}")
+
+
+def yz(latex_metin, duz_metin):
+    """LaTeX varsa birinci, yoksa ikinci metni dondurur."""
+    return latex_metin if LATEX else duz_metin
+
+
+def pdf_cdf_ciz(art, baslik, dosya):
+    """Makale Fig. 6 duzeninde: kirmizi PDF (sol), mavi CDF (sag)."""
+    v = art.dropna().values
+    kenar = np.arange(np.floor(v.min() / BIN_M) * BIN_M,
+                      np.ceil(v.max() / BIN_M) * BIN_M + BIN_M, BIN_M)
+    say, kenar = np.histogram(v, bins=kenar)
+    p = say / say.sum()
+    orta = 0.5 * (kenar[:-1] + kenar[1:])
+    cdf = np.cumsum(p)
+
+    f, ax = plt.subplots(figsize=(4.2, 3.1))
+    ax.plot(orta, p, color="#c0392b", lw=1.0)
+    ax.set_xlabel(yz(r"Gelgit d\i{}\c{s}\i{} su seviyesi, $\eta_{nt}$ (m)",
+                     "Gelgit dışı su seviyesi, $\\eta_{nt}$ (m)"))
+    ax.set_ylabel("PDF")
+    ax.set_ylim(0, p.max() * 1.15)
+    ax.tick_params(axis="y", colors="#c0392b")
+    ax.yaxis.label.set_color("#c0392b")
+
+    ax2 = ax.twinx()
+    ax2.plot(orta, cdf, color="#1f4e9c", lw=1.0)
+    ax2.set_ylabel("CDF")
+    ax2.set_ylim(0, 1.02)
+    ax2.grid(False)
+    ax2.tick_params(axis="y", colors="#1f4e9c")
+    ax2.yaxis.label.set_color("#1f4e9c")
+
+    ax.set_title(baslik)
+    f.savefig(FIG / f"{dosya}.png")
+    f.savefig(FIG / f"{dosya}.pdf")
+    plt.close(f)
+    print(f"    figur: {dosya}  (kutu {BIN_M*100:.0f} cm, "
+          f"tepe PDF {p.max():.3f})")
+
+
+def zaman_serisi_ciz(art, baslik, dosya):
+    """Makale Fig. 5 duzeni: anlik + aylik + yillik ortalama."""
+    f, ax = plt.subplots(figsize=(6.8, 2.8))
+    ax.plot(art.index, art.values, lw=0.15, color="0.35",
+            label=yz(r"anl\i{}k (15 dk)", "anlık (15 dk)"))
+    ax.plot(art.index, art.rolling("30D").mean().values, lw=0.9,
+            color="#c0392b",
+            label=yz(r"ayl\i{}k hareketli ortalama",
+                     "aylık hareketli ortalama"))
+    yil = art.resample("1YE").mean()
+    ax.step(yil.index, yil.values, where="mid", lw=0.9, color="#1f6f3f",
+            label=yz(r"y\i{}ll\i{}k ortalama", "yıllık ortalama"))
+    ax.set_ylabel("$\\eta_{nt}$ (m)")
+    ax.set_title(baslik)
+    ax.legend(ncol=3, loc="upper left", framealpha=0.9)
+    f.savefig(FIG / f"{dosya}.png")
+    f.savefig(FIG / f"{dosya}.pdf")
+    plt.close(f)
+    print(f"    figur: {dosya}")
+
+
+def main():
+    FIG.mkdir(parents=True, exist_ok=True)
+    TABLO.mkdir(parents=True, exist_ok=True)
+    s = oku()
+    ozet = {}
+
+    for ad, a, b in DONEMLER:
+        x = kes(s, a, b)
+        print("=" * 76)
+        print(f"{ad.upper()}  ({a}-{b})   n = {len(x):,}")
+        print("=" * 76)
+
+        coef = coz(x)
+        ong = kur(x, coef)
+        gelgit = pd.Series(np.asarray(ong.h, float), index=x.index)
+        artik = x - gelgit
+
+        # TD: makale Denk. 3. Gelgit sinyali ortalamasindan arindirilir,
+        # cunku "enerji" salinim enerjisidir, datum degil.
+        gt = (gelgit - gelgit.mean()).values
+        at = (artik - artik.mean()).values
+        TD = float(np.sqrt(np.nansum(gt**2) / np.nansum(at**2)))
+
+        ist = {
+            "ortalama_cm": artik.mean() * 100,
+            "std_cm": artik.std() * 100,
+            "min_cm": artik.min() * 100,
+            "max_cm": artik.max() * 100,
+            "aralik_cm": (artik.max() - artik.min()) * 100,
+            "TD": TD,
+        }
+        ozet[ad] = (ist, artik)
+
+        print(f"  ortalama       : {ist['ortalama_cm']:+.4f} cm   "
+              f"<-- tanimi geregi ~0")
+        print(f"  standart sapma : {ist['std_cm']:.2f} cm   "
+              f"<-- dagilimi temsil eden buyukluk")
+        print(f"  en dusuk / en yuksek : {ist['min_cm']:+.1f} / "
+              f"{ist['max_cm']:+.1f} cm")
+        print(f"  azami aralik   : {ist['aralik_cm']:.1f} cm")
+        print(f"  TD (gelgit baskinligi) : {TD:.3f}")
+
+        print("  yuzdelikler (cm):")
+        q = np.percentile(artik.dropna().values * 100, YUZDELIK)
+        print("   ", "  ".join(f"%{p}={v:+.1f}" for p, v in
+                               zip(YUZDELIK, q)))
+
+    # --- makale ile karsilastirma ---
+    ist, artik = ozet["makale penceresi"]
+    print("\n" + "=" * 76)
+    print("DOGRULAMA: Ozturk & Yuksel (2023) Tablo 3, Bozyazi")
+    print("=" * 76)
+    print(f"  {'buyukluk':<26}{'makale':>10}{'bizim':>10}{'fark':>10}")
+    print("-" * 76)
+    for et, mv, bv in [
+        ("azami aralik (cm)", MAKALE_NONTIDAL_MAX, ist["aralik_cm"]),
+        ("standart sapma (cm)", MAKALE_NONTIDAL_STD, ist["std_cm"]),
+        ("TD", MAKALE_TD, ist["TD"]),
+        ("ortalama (cm)", 0.0, ist["ortalama_cm"]),
+    ]:
+        print(f"  {et:<26}{mv:>10.2f}{bv:>10.2f}{bv-mv:>+10.2f}")
+
+    # --- figurler ve tablo: birincil donem ---
+    print("\n--- figurler ---")
+    for ad, dosya, bas in [
+        ("temiz on yil", "01_nontidal_pdf_cdf",
+         yz(r"Bozyaz\i{} - gelgit d\i{}\c{s}\i{} su seviyesi (2010--2019)",
+            "Bozyazı - gelgit dışı su seviyesi (2010-2019)")),
+        ("son bes yil", "01b_nontidal_pdf_cdf_son5yil",
+         yz(r"Bozyaz\i{} - gelgit d\i{}\c{s}\i{} su seviyesi (2021--2025)",
+            "Bozyazı - gelgit dışı su seviyesi (2021-2025)")),
+    ]:
+        pdf_cdf_ciz(ozet[ad][1], bas, dosya)
+    zaman_serisi_ciz(
+        ozet["tum kayit"][1],
+        yz(r"Bozyaz\i{} - gelgit d\i{}\c{s}\i{} su seviyesi de\u{g}i\c{s}imi",
+           "Bozyazı - gelgit dışı su seviyesi değişimi"),
+        "02_nontidal_zaman_serisi")
+
+    yol = TABLO / "03_nontidal_ozet.csv"
+    with open(yol, "w", encoding="utf-8") as f:
+        f.write("donem,ortalama_cm,std_cm,min_cm,max_cm,aralik_cm,TD\n")
+        for ad, (i_, _) in ozet.items():
+            f.write(f"{ad},{i_['ortalama_cm']:.4f},{i_['std_cm']:.3f},"
+                    f"{i_['min_cm']:.2f},{i_['max_cm']:.2f},"
+                    f"{i_['aralik_cm']:.2f},{i_['TD']:.4f}\n")
+    print(f"\nyazildi: {yol}")
+
+    art = ozet["temiz on yil"][1].dropna().values * 100
+    yol2 = TABLO / "04_nontidal_yuzdelikler.csv"
+    with open(yol2, "w", encoding="utf-8") as f:
+        f.write("yuzdelik,seviye_cm\n")
+        for p in YUZDELIK:
+            f.write(f"{p},{np.percentile(art, p):.2f}\n")
+    print(f"yazildi: {yol2}")
+
+
+if __name__ == "__main__":
+    main()
