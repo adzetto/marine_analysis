@@ -313,6 +313,68 @@ def main():
             ws.write_number(r, 2, bv, bic["s2"])
             r += 1
 
+    # --- PDF/CDF verisi + Excel'in kendi grafigi ---
+    hist = csv_oku(f"01_nontidal_pdf_cdf_{SLUG}_veri.csv")
+    if hist is not None:
+        r += 2
+        ws.write(r, 0, "PDF / CDF grafiginin verisi", bic["alt"]); r += 1
+        ws.write(r, 0, "Asagidaki sayilar figurde cizilen degerlerin ta "
+                       "kendisi. Yandaki grafik bu hucrelerden kuruludur; "
+                       "hucreler degistirilirse grafik de degisir.",
+                 bic["not"])
+        ws.set_row(r, 26); r += 1
+        veri_bas = r
+        for j, b in enumerate(["Kutu ortasi (m)", "Kutu ortasi (cm)",
+                               "Sayim", "PDF", "CDF",
+                               "Kutu alt (m)", "Kutu ust (m)"]):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        ilk = r
+        for _, s in hist.iterrows():
+            ws.write_number(r, 0, float(s.kutu_orta_m), bic["s4"])
+            ws.write_number(r, 1, float(s.kutu_orta_cm), bic["s2"])
+            ws.write_number(r, 2, int(s.sayim), bic["tam"])
+            ws.write_number(r, 3, float(s.PDF), bic["s4"])
+            ws.write_number(r, 4, float(s.CDF), bic["s4"])
+            ws.write_number(r, 5, float(s.kutu_alt_m), bic["s4"])
+            ws.write_number(r, 6, float(s.kutu_ust_m), bic["s4"])
+            r += 1
+        son = r - 1
+
+        sh = "04_NONTIDAL"
+        ch = wb.add_chart({"type": "scatter",
+                           "subtype": "straight_with_markers"})
+        ch.add_series({
+            "name": "PDF (olusum olasiligi)",
+            "categories": [sh, ilk, 0, son, 0],
+            "values": [sh, ilk, 3, son, 3],
+            "line": {"color": "#C0392B", "width": 1.75},
+            "marker": {"type": "circle", "size": 4,
+                       "fill": {"color": "#C0392B"}},
+        })
+        ch.add_series({
+            "name": "CDF (asilmama olasiligi)",
+            "categories": [sh, ilk, 0, son, 0],
+            "values": [sh, ilk, 4, son, 4],
+            "line": {"color": "#1F4E9C", "width": 1.75},
+            "marker": {"type": "none"},
+            "y2_axis": True,
+        })
+        ch.set_x_axis({"name": "Gelgit disi su seviyesi (m)",
+                       "major_gridlines": {"visible": True}})
+        ch.set_y_axis({"name": "PDF", "major_gridlines": {"visible": True}})
+        ch.set_y2_axis({"name": "CDF", "min": 0, "max": 1})
+        ch.set_title({"name": "Bozyazi - gelgit disi su seviyesi dagilimi"})
+        ch.set_size({"width": 640, "height": 420})
+        ch.set_legend({"position": "bottom"})
+        ws.insert_chart(veri_bas, 8, ch)
+
+        if resim_ekle(ws, veri_bas + 23, 8,
+                      f"01_nontidal_pdf_cdf_{SLUG}.png", 0.55):
+            ws.write(veri_bas + 22, 8,
+                     "Ayni dagilimin betikle uretilen surumu "
+                     "(istasyon konumu yildizla):", bic["alt"])
+
     r += 1
     yuz = csv_oku(f"04_nontidal_yuzdelikler_{SLUG}.csv")
     if yuz is not None:

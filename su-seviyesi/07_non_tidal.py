@@ -40,8 +40,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import scienceplots  # noqa: F401
 
-from ortak import (FIG, TABLO, DONEMLER, MAKALE_NONTIDAL_MAX,
+from ortak import (FIG, TABLO, DONEMLER, ENLEM, BOYLAM, MAKALE_NONTIDAL_MAX,
                    MAKALE_NONTIDAL_STD, MAKALE_TD, coz_yukle, kes, kur, oku)
+from harita import konum_haritasi
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -133,12 +134,20 @@ def pdf_cdf_ciz(art, baslik, dosya, kutu=None):
     orta = 0.5 * (kenar[:-1] + kenar[1:])
     cdf = np.cumsum(p)
 
-    f, ax = plt.subplots(figsize=(4.2, 3.1))
+    # Cizilen sayilar CSV'ye de yazilir; Excel'de ayni grafik kurulabilsin.
+    pd.DataFrame({
+        "kutu_alt_m": kenar[:-1], "kutu_ust_m": kenar[1:],
+        "kutu_orta_m": orta, "kutu_orta_cm": orta * 100,
+        "sayim": say, "PDF": p, "CDF": cdf,
+    }).to_csv(TABLO / f"{dosya}_veri.csv", index=False)
+
+    f, ax = plt.subplots(figsize=(4.6, 3.4))
     ax.plot(orta, p, color="#c0392b", lw=1.0)
     ax.set_xlabel(yz(r"Gelgit d\i{}\c{s}\i{} su seviyesi, $\eta_{nt}$ (m)",
                      "Gelgit dışı su seviyesi, $\\eta_{nt}$ (m)"))
     ax.set_ylabel("PDF")
-    ax.set_ylim(0, p.max() * 1.15)
+    # Ust bosluk, sol ustteki ic haritanin egriyle cakismamasi icin.
+    ax.set_ylim(0, p.max() * 1.55)
     ax.tick_params(axis="y", colors="#c0392b")
     ax.yaxis.label.set_color("#c0392b")
 
@@ -151,12 +160,18 @@ def pdf_cdf_ciz(art, baslik, dosya, kutu=None):
     ax2.yaxis.label.set_color("#1f4e9c")
 
     ax.set_title(baslik)
+
+    # Makaledeki gibi: sol uste istasyonu yildizla gosteren kucuk harita.
+    # PDF egrisi tepe noktasindan sonra sagda kaldigi ve y ekseninde ust
+    # bosluk birakildigi icin sol ust kose bostur.
+    konum_haritasi(ax, BOYLAM, ENLEM, konum="sol_ust", boyut=0.34)
+
     f.savefig(FIG / f"{dosya}.png")
     f.savefig(FIG / f"{dosya}.pdf")
     plt.close(f)
     w = (kenar[1] - kenar[0]) * 100
     print(f"    figur: {dosya}  (kutu {w:.1f} cm, "
-          f"tepe PDF {p.max():.3f})")
+          f"tepe PDF {p.max():.3f}, veri -> {dosya}_veri.csv)")
 
 
 def zaman_serisi_ciz(art, baslik, dosya):
@@ -174,6 +189,8 @@ def zaman_serisi_ciz(art, baslik, dosya):
     ax.set_ylabel("$\\eta_{nt}$ (m)")
     ax.set_title(baslik)
     ax.legend(ncol=3, loc="upper left", framealpha=0.9)
+    konum_haritasi(ax, BOYLAM, ENLEM, konum="sag_alt", boyut=0.16,
+                   etiketler=False)
     f.savefig(FIG / f"{dosya}.png")
     f.savefig(FIG / f"{dosya}.pdf")
     plt.close(f)
