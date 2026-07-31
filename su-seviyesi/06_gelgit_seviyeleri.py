@@ -34,8 +34,7 @@ import pandas as pd
 from scipy.signal import argrelextrema
 
 from ortak import (TABLO, PAPER_BAS, PAPER_BIT, bilesen_sozlugu, coz, kes,
-                   oku)
-import utide
+                   kur, oku)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -70,15 +69,38 @@ def main():
     h = bilesen_sozlugu(coef)
 
     # --- 19 yillik astronomik ongoru ---
+    #
+    # DIKKAT: egim KAPATILIR. UTide'in reconstruct'i dogrusal egimi
+    # varsayilan olarak ekliyor; 19 yillik bir ongoruye -18.7 mm/yil
+    # eklenince tahmin ~35 cm suruklenir ve HAT-LAT yapay olarak buyur.
+    # HAT/LAT tanimi geregi ASTRONOMIK uc degerlerdir; ne meteorolojik
+    # katki ne de ekstrapole edilmis bir egilim girmelidir.
     t = pd.date_range(ANALIZ_A, periods=int(ONGORU_YIL * 365.25 * 24 * 60
                                             / ADIM_DK),
                       freq=f"{ADIM_DK}min")
-    ong = utide.reconstruct(t, coef, verbose=False, min_SNR=2)
+    ong = kur(pd.Series(0.0, index=t.tz_localize("UTC")), coef,
+              trend=False, min_SNR=2)
     y = np.asarray(ong.h, float)
     # Ongoru mutlak datumda gelir; MSL'e gore merkezle.
     y = y - np.nanmean(y)
     print(f"ongoru: {t[0].date()} -> {t[-1].date()}  "
-          f"({len(t):,} adim, {ADIM_DK} dk)")
+          f"({len(t):,} adim, {ADIM_DK} dk, egim haric)")
+
+    # --- SA/SSA'siz surum ---
+    #
+    # SA (yillik) ve SSA (yarim yillik) bu istasyonda 9.4 ve 4.2 cm, yani
+    # M2'den (9.6 cm) buyuk. Ancak bunlar buyuk olcude ISINIMSAL/mevsimsel
+    # (suyun mevsimlik isinip genlesmesi), gravitasyonel gelgit degil.
+    # Denizcilik gelgit tablolari (hocanin ornek verdigi Famagusta IHO
+    # tablosu gibi) tipik olarak kisa periyotlu gravitasyonel gelgiti
+    # verir; mevsimsel dongu ayri raporlanir. Ikisi de hesaplanir.
+    mevsimsel = {"SA", "SSA", "MSM", "MM", "MSF", "MF"}
+    kisa_ad = [a for a in coef["name"] if a not in mevsimsel]
+    ong2 = kur(pd.Series(0.0, index=t.tz_localize("UTC")), coef,
+               trend=False, constit=kisa_ad, min_SNR=2)
+    y2 = np.asarray(ong2.h, float)
+    y2 = y2 - np.nanmean(y2)
+    HAT2, LAT2 = float(np.nanmax(y2)), float(np.nanmin(y2))
 
     tepe, dip = uc_noktalar(y)
     HW, LW = y[tepe], y[dip]
@@ -162,15 +184,39 @@ def main():
     print(f"  Azami astronomik aralik (HAT-LAT)   = "
           f"{(duzey['HAT']-duzey['LAT'])*100:.1f} cm")
 
+    print("\n" + "=" * 76)
+    print("HAT / LAT: MEVSIMSEL BILESENLER HARIC")
+    print("=" * 76)
+    print(f"  {'':<34}{'SA/SSA dahil':>16}{'SA/SSA haric':>16}")
+    print(f"  {'HAT (m, MSL ustu)':<34}{duzey['HAT']:>+16.3f}{HAT2:>+16.3f}")
+    print(f"  {'LAT (m, MSL alti)':<34}{duzey['LAT']:>+16.3f}{LAT2:>+16.3f}")
+    print(f"  {'aralik (cm)':<34}"
+          f"{(duzey['HAT']-duzey['LAT'])*100:>16.1f}"
+          f"{(HAT2-LAT2)*100:>16.1f}")
+    print()
+    print("  SA = 9.4 cm ve SSA = 4.2 cm bu istasyonda M2'den (9.6 cm)")
+    print("  buyuk, ama buyuk olcude isinimsal/mevsimsel: suyun mevsimlik")
+    print("  isinip genlesmesi. Denizcilik gelgit tablolari (hocanin ornek")
+    print("  verdigi Famagusta IHO tablosu gibi) kisa periyotlu")
+    print("  gravitasyonel gelgiti verir. Karsilastirma icin:")
+    print("    Famagusta  HAT +0.23 / LAT -0.22, M2+S2 = 0.183 m")
+    print(f"    Bozyazi    HAT {HAT2:+.2f} / LAT {LAT2:+.2f}, "
+          f"M2+S2 = {M2+S2:.3f} m")
+    print("  Hangisinin raporlanacagi hocaya sorulmalidir; ikisi de yazildi.")
+
     # --- yaz ---
     TABLO.mkdir(parents=True, exist_ok=True)
     yol = TABLO / "02_gelgit_duzeyleri.csv"
+    haric = {"HAT": HAT2, "LAT": LAT2}
     with open(yol, "w", encoding="utf-8") as fo:
-        fo.write("duzey,aciklama,su_seviyesi_m_MSL,formul_m_MSL,"
+        fo.write("duzey,aciklama,su_seviyesi_m_MSL,"
+                 "su_seviyesi_m_MSL_mevsimsel_haric,formul_m_MSL,"
                  "istasyon_datumu_m\n")
         for k, v in duzey.items():
             f_ = formul.get(k)
+            hv = haric.get(k)
             fo.write(f"{k},{aciklama[k]},{v:.4f},"
+                     f"{'' if hv is None else f'{hv:.4f}'},"
                      f"{'' if f_ is None else f'{f_:.4f}'},"
                      f"{msl_gozlem+v:.4f}\n")
     print(f"\nyazildi: {yol}")

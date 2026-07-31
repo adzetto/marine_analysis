@@ -169,9 +169,21 @@ def main():
         print("=" * 76)
 
         coef = coz(x)
-        ong = kur(x, coef)
-        gelgit = pd.Series(np.asarray(ong.h, float), index=x.index)
-        artik = x - gelgit
+
+        # Artik IKI turlu hesaplanir.
+        #
+        # T_TIDE'da dogrusal egim terimi YOKTUR; makalenin artigi bu yuzden
+        # kaydin yavas suruklenmesini hala icerir. UTide ise egimi cozup
+        # ongoruye ekliyor, dolayisiyla varsayilan artik daha DAR cikiyor.
+        # Makaleyle elmayla elma karsilastirmasi yapabilmek icin egimin
+        # ongoruden cikarilmadigi surum esas alinir; egimi arindirilmis
+        # surum de bilgi olarak verilir.
+        gelgit_tr = pd.Series(np.asarray(kur(x, coef, trend=True).h, float),
+                              index=x.index)
+        gelgit = pd.Series(np.asarray(kur(x, coef, trend=False).h, float),
+                           index=x.index)
+        artik = x - gelgit                 # makaleyle karsilastirilabilir
+        artik_tr = x - gelgit_tr           # egimden arindirilmis
 
         # TD: makale Denk. 3. Gelgit sinyali ortalamasindan arindirilir,
         # cunku "enerji" salinim enerjisidir, datum degil.
@@ -197,6 +209,12 @@ def main():
               f"{ist['max_cm']:+.1f} cm")
         print(f"  azami aralik   : {ist['aralik_cm']:.1f} cm")
         print(f"  TD (gelgit baskinligi) : {TD:.3f}")
+        gt = (gelgit_tr - gelgit_tr.mean()).values
+        at2 = (artik_tr - artik_tr.mean()).values
+        print(f"  [egimden arindirilmis surum: std "
+              f"{artik_tr.std()*100:.2f} cm, aralik "
+              f"{(artik_tr.max()-artik_tr.min())*100:.1f} cm, TD "
+              f"{np.sqrt(np.nansum(gt**2)/np.nansum(at2**2)):.3f}]")
 
         print("  yuzdelikler (cm):")
         q = np.percentile(artik.dropna().values * 100, YUZDELIK)

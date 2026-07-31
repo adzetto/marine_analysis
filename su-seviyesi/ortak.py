@@ -149,10 +149,36 @@ def coz(s, trend=True):
                        verbose=False)
 
 
-def kur(s, coef):
-    """Cozulen bilesenlerden gelgit ongorusu (ayni zaman ekseninde)."""
+def kur(s, coef, trend=True, constit=None, min_SNR=0):
+    """Cozulen bilesenlerden gelgit ongorusu.
+
+    trend
+        UTide'in reconstruct'i dogrusal egimi VARSAYILAN olarak ongoruye
+        ekler (_reconstruct.py: `trend = not coef.aux.opt.notrend`) ve bunu
+        kapatan bir parametre sunmaz; bayrak cozumden tasinir. Burada gecici
+        olarak degistirilip geri konuluyor.
+
+        Bunun iki yerde onemi var:
+          * Gelgit DUZEYLERI icin egim kapatilmalidir. HAT/LAT tanimi geregi
+            astronomik uc degerlerdir; 19 yillik bir ongoruye -18.7 mm/yil
+            eklenirse tahmin 35 cm suruklenir ve HAT-LAT yapay olarak buyur.
+          * Gelgit DISI artik icin egim, makaleyle karsilastirilabilirlik
+            adina ongoruden CIKARILMAMALIDIR: T_TIDE'da egim terimi yoktur,
+            yani makalenin artigi bu suruklenmeyi hala icerir.
+
+    constit
+        Yalniz belirli bilesenlerle kurmak icin ad listesi. Ornegin mevsimsel
+        SA/SSA haric tutulabilir.
+    """
     t = s.index.tz_localize(None)
-    return utide.reconstruct(t, coef, verbose=False, min_SNR=0)
+    opt = coef["aux"]["opt"]
+    onceki = opt["notrend"]
+    opt["notrend"] = not trend
+    try:
+        return utide.reconstruct(t, coef, verbose=False, min_SNR=min_SNR,
+                                 constit=constit)
+    finally:
+        opt["notrend"] = onceki
 
 
 def bilesen_sozlugu(coef):
