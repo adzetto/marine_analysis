@@ -9,6 +9,14 @@ data/*.npy
 # ortamlarinda zincir 01'de duruyor.
 data/*.dat
 
+# 05'in urettigi cozum ve turetilen seriler. Colab'da uretilip zip ile
+# indiriliyor; depoda tutulmalarina gerek yok.
+data/coef_*.pkl
+data/bozyazi_gelgit_*.dat.gz
+data/bozyazi_artik_*.dat.gz
+data/bozyazi_ongoru_*.dat.gz
+BOZYAZI_SU_SEVIYESI.xlsx
+
 # Elsevier telifli makale - acik depoya konulamaz.
 yalcinyuksel-2023.pdf
 

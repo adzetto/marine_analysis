@@ -41,8 +41,7 @@ import matplotlib.pyplot as plt
 import scienceplots  # noqa: F401
 
 from ortak import (FIG, TABLO, DONEMLER, MAKALE_NONTIDAL_MAX,
-                   MAKALE_NONTIDAL_STD, MAKALE_TD, bilesen_sozlugu, coz, kes,
-                   kur, oku)
+                   MAKALE_NONTIDAL_STD, MAKALE_TD, coz_yukle, kes, kur, oku)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -50,7 +49,24 @@ except Exception:
     pass
 
 DPI = 300
-BIN_M = 0.02                 # histogram kutu genisligi (2 cm)
+
+# Histogram kutulamasi.
+#
+# Makale Fig. 6'nin kutu genisligi yazmiyor, ama tepe PDF degerlerinden
+# geri hesaplanabiliyor: bir normal dagilimda 'probability' normalizasyonlu
+# tepe yaklasik w / (sigma*sqrt(2pi)).
+#     Erdemli  sigma 12.00 cm, tepe 0.52  ->  w = 15.6 cm
+#     Mentes   sigma 10.00 cm, tepe 0.40  ->  w = 10.0 cm
+#     Trabzon  sigma  9.15 cm, tepe 0.355 ->  w =  8.1 cm
+#     Yalova   sigma 13.78 cm, tepe 0.37  ->  w = 12.8 cm
+# Her birinde w, o istasyonun veri araligini yaklasik 10'a boluyor. Yani
+# sabit bir genislik degil, sabit bir KUTU SAYISI kullanilmis: MATLAB'in
+# eski hist() cagrisinin varsayilani olan 10.
+#
+# Karsilastirilabilirlik icin ayni sey yapilir. 10 kutu gorsel olarak cok
+# kaba oldugundan ayrica ince bir surum de uretilir.
+BIN_SAYISI = 10              # makaleyle ayni
+BIN_M_INCE = 0.02            # ikinci, bilgi amacli surum (2 cm)
 YUZDELIK = [0.1, 1, 5, 10, 25, 50, 75, 90, 95, 99, 99.9]
 
 def latex_var():
@@ -100,11 +116,18 @@ def slug(ad):
             .replace("ğ", "g"))
 
 
-def pdf_cdf_ciz(art, baslik, dosya):
-    """Makale Fig. 6 duzeninde: kirmizi PDF (sol), mavi CDF (sag)."""
+def pdf_cdf_ciz(art, baslik, dosya, kutu=None):
+    """Makale Fig. 6 duzeninde: kirmizi PDF (sol), mavi CDF (sag).
+
+    kutu=None  -> makaledeki gibi 10 kutu (aralik 10'a bolunur)
+    kutu=sayi  -> o genislikte sabit kutu (metre), ince surum icin
+    """
     v = art.dropna().values
-    kenar = np.arange(np.floor(v.min() / BIN_M) * BIN_M,
-                      np.ceil(v.max() / BIN_M) * BIN_M + BIN_M, BIN_M)
+    if kutu is None:
+        kenar = np.linspace(v.min(), v.max(), BIN_SAYISI + 1)
+    else:
+        kenar = np.arange(np.floor(v.min() / kutu) * kutu,
+                          np.ceil(v.max() / kutu) * kutu + kutu, kutu)
     say, kenar = np.histogram(v, bins=kenar)
     p = say / say.sum()
     orta = 0.5 * (kenar[:-1] + kenar[1:])
@@ -131,7 +154,8 @@ def pdf_cdf_ciz(art, baslik, dosya):
     f.savefig(FIG / f"{dosya}.png")
     f.savefig(FIG / f"{dosya}.pdf")
     plt.close(f)
-    print(f"    figur: {dosya}  (kutu {BIN_M*100:.0f} cm, "
+    w = (kenar[1] - kenar[0]) * 100
+    print(f"    figur: {dosya}  (kutu {w:.1f} cm, "
           f"tepe PDF {p.max():.3f})")
 
 
@@ -168,7 +192,8 @@ def main():
         print(f"{ad.upper()}  ({a}-{b})   n = {len(x):,}")
         print("=" * 76)
 
-        coef = coz(x)
+        # Cozum 05'te bir kez yapilip saklandi; burada tekrar cozulmez.
+        coef = coz_yukle(slug(ad))
 
         # Artik IKI turlu hesaplanir.
         #
@@ -235,11 +260,12 @@ def main():
             f.write("yuzdelik,seviye_cm\n")
             for p_, v_ in zip(YUZDELIK, q):
                 f.write(f"{p_},{v_:.2f}\n")
-        pdf_cdf_ciz(artik,
-                    yz(rf"Bozyaz\i{{}} - gelgit d\i{{}}\c{{s}}\i{{}} su "
-                       rf"seviyesi ({a}--{b})",
-                       f"Bozyazı - gelgit dışı su seviyesi ({a}-{b})"),
-                    f"01_nontidal_pdf_cdf_{slug(ad)}")
+        bas_ = yz(rf"Bozyaz\i{{}} - gelgit d\i{{}}\c{{s}}\i{{}} su "
+                  rf"seviyesi ({a}--{b})",
+                  f"Bozyazı - gelgit dışı su seviyesi ({a}-{b})")
+        pdf_cdf_ciz(artik, bas_, f"01_nontidal_pdf_cdf_{slug(ad)}")
+        pdf_cdf_ciz(artik, bas_, f"01b_nontidal_pdf_cdf_ince_{slug(ad)}",
+                    kutu=BIN_M_INCE)
         zaman_serisi_ciz(artik,
                          yz(rf"Bozyaz\i{{}} - $\eta_{{nt}}$ ({a}--{b})",
                             f"Bozyazı - $\\eta_{{nt}}$ ({a}-{b})"),

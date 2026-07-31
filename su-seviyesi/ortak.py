@@ -194,6 +194,33 @@ def kur(s, coef, trend=True, constit=None, min_SNR=0):
         opt["notrend"] = onceki
 
 
+def coz_kaydet(coef, ad="makale_penceresi"):
+    """Harmonik cozumu diske yazar (bir kez coz, cok kez kullan).
+
+    Cozum, zincirin tek agir adimi: 15 dakikalik cozunurlukte 300 bin
+    noktada UTide'in tasarim matrisi birkac GB tutuyor. Sonraki betiklerin
+    ayni cozumu tekrar uretmesi hem zaman kaybi hem de dar bellekli
+    ortamlarda islemin oldurulme sebebi. Bu yuzden cozum bir kez yapilip
+    saklanir; 06 ve 07 buradan okur.
+    """
+    import pickle
+    VERI.mkdir(parents=True, exist_ok=True)
+    yol = VERI / f"coef_{ad}.pkl"
+    with open(yol, "wb") as f:
+        pickle.dump(coef, f)
+    return yol
+
+
+def coz_yukle(ad="makale_penceresi"):
+    import pickle
+    yol = VERI / f"coef_{ad}.pkl"
+    if not yol.exists():
+        raise FileNotFoundError(
+            f"{yol} yok. Once 05_harmonik_analiz.py calistirilmali.")
+    with open(yol, "rb") as f:
+        return pickle.load(f)
+
+
 def bilesen_sozlugu(coef):
     """utide cozumunu {ad: {A cm, g derece, A_ci cm, snr}} sozluguna cevirir."""
     ci = np.where(coef.A_ci > 0, coef.A_ci, np.nan)

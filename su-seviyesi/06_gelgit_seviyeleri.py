@@ -33,8 +33,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import argrelextrema
 
-from ortak import (TABLO, PAPER_BAS, PAPER_BIT, bilesen_sozlugu, coz, kes,
-                   kur, oku)
+from ortak import (TABLO, PAPER_BAS, PAPER_BIT, bilesen_sozlugu, coz_yukle,
+                   kes, kur, oku, yaz)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -65,7 +65,8 @@ def main():
     print(f"gozlenen MSL (ayiklanmis veri) = {msl_gozlem:.4f} m "
           f"(istasyon yerel datumu)")
 
-    coef = coz(x)
+    # Cozum 05'te bir kez yapilip saklandi; burada tekrar cozulmez.
+    coef = coz_yukle("makale_penceresi")
     h = bilesen_sozlugu(coef)
 
     # --- 19 yillik astronomik ongoru ---
@@ -101,6 +102,20 @@ def main():
     y2 = np.asarray(ong2.h, float)
     y2 = y2 - np.nanmean(y2)
     HAT2, LAT2 = float(np.nanmax(y2)), float(np.nanmin(y2))
+
+    # 19 yillik ongoruler saklanir; figur/tablo degistirilmek istendiginde
+    # hepsi bastan hesaplanmasin.
+    ti = t.tz_localize("UTC")
+    yaz(pd.Series(y, index=ti), "bozyazi_ongoru_19yil.dat", [
+        "Bozyazi - 19 yillik ASTRONOMIK gelgit ongorusu (MSL'e gore)",
+        "dogrusal egim haric, SNR>2 bilesenler, 10 dk adim",
+    ])
+    yaz(pd.Series(y2, index=ti), "bozyazi_ongoru_19yil_mevsimsiz.dat", [
+        "Bozyazi - 19 yillik astronomik gelgit ongorusu (MSL'e gore)",
+        "dogrusal egim ve mevsimsel bilesenler (SA,SSA,MSM,MM,MSF,MF) haric",
+    ])
+    print("yazildi: bozyazi_ongoru_19yil.dat.gz , "
+          "bozyazi_ongoru_19yil_mevsimsiz.dat.gz")
 
     tepe, dip = uc_noktalar(y)
     HW, LW = y[tepe], y[dip]

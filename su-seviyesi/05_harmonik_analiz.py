@@ -26,10 +26,11 @@ Calistirma: python 05_harmonik_analiz.py
 import sys
 
 import numpy as np
+import pandas as pd
 
 from ortak import (BASE, TABLO, DONEMLER, MAKALE_GENLIK, MAKALE_F, MAKALE_E,
-                   bilesen_sozlugu, coz, form_enerji, gelgit_tipi, kes, oku,
-                   trend_mm_yil)
+                   bilesen_sozlugu, coz, coz_kaydet, form_enerji,
+                   gelgit_tipi, kes, kur, oku, trend_mm_yil, yaz)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -119,6 +120,25 @@ def main():
 
         # Her donem biter bitmez diske yazilir.
         tablo_yaz(ad, h)
+
+        # Cozumun kendisi ve turetilen seriler saklanir; boylece 06 ve 07
+        # ayni agir cozumu tekrar yapmak zorunda kalmiyor.
+        p = coz_kaydet(coef, slug(ad))
+        print(f"  yazildi: {p.name}")
+        gelgit = pd.Series(np.asarray(kur(x, coef, trend=False).h, float),
+                           index=x.index)
+        yaz(gelgit, f"bozyazi_gelgit_{slug(ad)}.dat", [
+            "Bozyazi - UTide ile kurulan GELGIT ongorusu",
+            f"donem {a} .. {b}, dogrusal egim ongoruye eklenmedi",
+            "zaman UTC, seviye metre (istasyon yerel datumu)",
+        ])
+        yaz(x - gelgit, f"bozyazi_artik_{slug(ad)}.dat", [
+            "Bozyazi - GELGIT DISI (non-tidal) artik = olculen - gelgit",
+            f"donem {a} .. {b}",
+            "zaman UTC, seviye metre",
+        ])
+        print(f"  yazildi: bozyazi_gelgit_{slug(ad)}.dat.gz , "
+              f"bozyazi_artik_{slug(ad)}.dat.gz")
         with open(TABLO / "05_donem_ozeti.csv", "w", encoding="utf-8") as f:
             f.write("donem,baslangic,bitis,form_faktoru_F,enerji_faktoru_E,"
                     "trend_mm_yil\n")

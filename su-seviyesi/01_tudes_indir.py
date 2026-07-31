@@ -75,14 +75,18 @@ ISTASYONLAR = {
 ISTASYON_ADI = "bozyazi"          # varsayilan; komut satirindan degistirilir
 ISTASYON = ISTASYONLAR[ISTASYON_ADI]
 
-# Portalda Bozyazi kaydi 1 TEMMUZ 2009'da basliyor (2009-06 ve oncesi
-# "Veri bulunamadi" donuyor, 2009-07 %82.8 dolu, 2009-08'den itibaren %100).
+# Baslangic, kaydin gercek basindan KASITLI olarak geriye konuldu.
 #
-# Not: ilk taramada her yil icin 1 Mart-29 Nisan penceresi denenmis ve 2009
-# "yok" gorunmustu; o tarihte kayit henuz baslamadigi icin. Ay ay sinanunca
-# Temmuz 2009'dan itibaren veri oldugu goruldu. Bu alti ay makalenin
-# penceresine giriyor ve Kasim-Aralik firtina mevsimini iceriyor.
-BASLANGIC = dt.date(2009, 7, 1)
+# Bozyazi icin portaldaki en eski veri 1 Temmuz 2009. Ama bu tarih bir kez
+# yanlis kestirildi: ilk taramada her yil icin 1 Mart-29 Nisan penceresi
+# denenmis, 2009'da kayit o tarihte henuz baslamadigi icin "veri yok"
+# sonucu cikarilmis ve alti aylik veri gozden kacmisti.
+#
+# Ayni hataya bir daha dusmemek icin tarih tahmin edilmiyor: istek bos
+# donen dilimler zaten ucuz ("Veri bulunamadi" -> bos liste) ve
+# 02_veri_birlestir.py bos parcalari sorunsuz atliyor. Boylece istasyon
+# fark etmeksizin kaydin TAMAMI iniyor.
+BASLANGIC = dt.date(2005, 1, 1)
 BITIS = dt.date.today()
 
 PARCA_GUN = 55           # 60 gun sinirinin altinda guvenli pay

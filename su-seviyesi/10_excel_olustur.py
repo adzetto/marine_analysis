@@ -1,0 +1,409 @@
+"""
+10_excel_olustur.py
+===================
+Butun analizi tek bir Excel kitabinda toplar: ham veri, ayiklanmis veri,
+kurulan gelgit, gelgit disi artik, harmonik bilesenler, gelgit duzeyleri ve
+figurler.
+
+Ruzgar analizindeki kitaplardan farki
+-------------------------------------
+D3/D4 ruzgar kitaplarinda her sonuc hucre formuluyle hesaplaniyordu
+(COUNTIFS vb.), cunku oradaki islemler sayma ve oranlamaydi. Burada
+durum farkli: harmonik cozum 300 bin noktali bir en kucuk kareler
+problemi, gelgit duzeyleri 19 yillik bir ongorunun uc noktalarindan
+cikiyor. Bunlar Excel hucre formulleriyle yapilamaz. Bu yuzden kitap
+SONUCLARI tasiyor; uretimi Python betikleri yapiyor ve her sonucun hangi
+betikten geldigi kitapta yaziyor.
+
+Onkosul: 03, 05, 06, 07 calistirilmis olmali.
+Calistirma: python 10_excel_olustur.py
+"""
+
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import xlsxwriter
+
+from ortak import (FIG, TABLO, VERI, ENLEM, BOYLAM, ISTASYON, YAZAR,
+                   PAPER_BAS, PAPER_BIT, MAKALE_GENLIK, MAKALE_NONTIDAL_STD,
+                   MAKALE_TD, kes, oku, veri_yolu)
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
+CIKTI = Path(__file__).resolve().parent / "BOZYAZI_SU_SEVIYESI.xlsx"
+SLUG = "makale_penceresi"
+
+
+def guvenli_oku(ad):
+    try:
+        return oku(ad)
+    except FileNotFoundError:
+        return None
+
+
+def csv_oku(ad):
+    p = TABLO / ad
+    return pd.read_csv(p) if p.exists() else None
+
+
+def resim_ekle(ws, satir, sutun, png, olcek=0.62):
+    p = FIG / png
+    if p.exists():
+        ws.insert_image(satir, sutun, str(p),
+                        {"x_scale": olcek, "y_scale": olcek})
+        return True
+    return False
+
+
+def main():
+    print("veriler okunuyor...")
+    ham = guvenli_oku("bozyazi_ham.dat")
+    temiz = guvenli_oku("bozyazi_temiz.dat")
+    gelgit = guvenli_oku(f"bozyazi_gelgit_{SLUG}.dat")
+    artik = guvenli_oku(f"bozyazi_artik_{SLUG}.dat")
+    if temiz is None:
+        sys.exit("HATA: bozyazi_temiz.dat yok. Once 03 calistirilmali.")
+    if gelgit is None:
+        print("UYARI: gelgit/artik serileri yok (05 calismamis). "
+              "Kitap onlarsiz uretilecek.")
+
+    wb = xlsxwriter.Workbook(str(CIKTI), {"default_date_format":
+                                          "yyyy-mm-dd hh:mm"})
+    wb.set_properties({"title": f"{ISTASYON} deniz seviyesi analizi",
+                       "author": YAZAR})
+
+    bic = {
+        "baslik": wb.add_format({"bold": True, "font_size": 13,
+                                 "font_color": "#1F3864"}),
+        "alt": wb.add_format({"bold": True, "font_size": 10,
+                              "font_color": "#404040"}),
+        "bas": wb.add_format({"bold": True, "bg_color": "#1F3864",
+                              "font_color": "white", "border": 1,
+                              "align": "center", "valign": "vcenter",
+                              "text_wrap": True}),
+        "s4": wb.add_format({"num_format": "0.0000", "border": 1}),
+        "s3": wb.add_format({"num_format": "0.000", "border": 1}),
+        "s2": wb.add_format({"num_format": "0.00", "border": 1}),
+        "s1": wb.add_format({"num_format": "0.0", "border": 1}),
+        "tam": wb.add_format({"num_format": "#,##0", "border": 1}),
+        "met": wb.add_format({"border": 1}),
+        "tar": wb.add_format({"num_format": "yyyy-mm-dd hh:mm", "border": 1}),
+        "not": wb.add_format({"font_size": 9, "italic": True,
+                              "font_color": "#606060", "text_wrap": True}),
+        "vur": wb.add_format({"num_format": "0.000", "border": 1,
+                              "bold": True, "bg_color": "#FFF2CC"}),
+    }
+
+    # ---------------------------------------------------------------- 00
+    ws = wb.add_worksheet("00_OZET")
+    ws.set_column(0, 0, 38)
+    ws.set_column(1, 3, 20)
+    r = 0
+    ws.write(r, 0, f"{ISTASYON} mareograf istasyonu - deniz seviyesi analizi",
+             bic["baslik"]); r += 2
+
+    x = kes(temiz, PAPER_BAS, PAPER_BIT)
+    ozet = [
+        ("Istasyon", f"{ISTASYON} (TUDES id 11)"),
+        ("Konum", f"{ENLEM} K, {BOYLAM} D"),
+        ("Kaynak", "TUDES / Harita Genel Mudurlugu"),
+        ("Olcum araligi", "15 dakika (10 sn olcumun ortalamasi)"),
+        ("Kayit", f"{ham.index.min():%Y-%m-%d} .. "
+                  f"{ham.index.max():%Y-%m-%d}" if ham is not None else "-"),
+        ("Ham olcum", len(ham) if ham is not None else 0),
+        ("Ayiklama sonrasi", len(temiz)),
+        ("", ""),
+        ("ANALIZ PENCERESI", f"{PAPER_BAS} .. {PAPER_BIT}"),
+        ("Neden bu pencere", "Makalenin (Ozturk & Yuksel 2023) Bozyazi "
+                             "penceresiyle ortusen en genis aralik"),
+        ("Penceredeki olcum", len(x)),
+        ("MSL (istasyon datumu)", round(float(x.mean()), 4)),
+        ("", ""),
+        ("Datum notu", "Seviyeler istasyonun YEREL datumunda; ulke "
+                       "yukseklik sistemine baglanmis degil"),
+        ("Zaman", "UTC"),
+    ]
+    for k, v in ozet:
+        if k:
+            ws.write(r, 0, k, bic["alt"])
+            ws.write(r, 1, v)
+        r += 1
+
+    r += 1
+    ws.write(r, 0, "SAYFALAR", bic["baslik"]); r += 1
+    for k, v in [
+        ("01_VERI", "ham, ayiklanmis, kurulan gelgit ve artik seriler"),
+        ("02_BILESENLER", "harmonik gelgit bilesenleri (05_harmonik_analiz)"),
+        ("03_GELGIT_DUZEYLERI", "HAT..LAT (06_gelgit_seviyeleri)"),
+        ("04_NONTIDAL", "gelgit disi su seviyesi (07_non_tidal)"),
+        ("05_DENIZ_SEVIYESI", "yillik ortalamalar, istasyon karsilastirmasi"),
+        ("06_FIGURLER", "uretilen butun grafikler"),
+    ]:
+        ws.write(r, 0, k, bic["alt"])
+        ws.write(r, 1, v)
+        r += 1
+
+    r += 1
+    ws.write(r, 0,
+             "NOT: Bu kitaptaki sonuclar hucre formulleriyle uretilmemistir. "
+             "Harmonik cozum 300 bin noktali bir en kucuk kareler problemi, "
+             "gelgit duzeyleri 19 yillik bir ongorunun uc noktalari; ikisi "
+             "de Excel formulleriyle yapilamaz. Uretim Python betikleriyle "
+             "yapilmis, her sayfada hangi betikten geldigi yazilmistir.",
+             bic["not"])
+    ws.set_row(r, 46)
+
+    # ---------------------------------------------------------------- 01
+    print("01_VERI yaziliyor...")
+    ws = wb.add_worksheet("01_VERI")
+    ws.set_column(0, 0, 18)
+    ws.set_column(1, 4, 13)
+    ws.write(0, 0, "Butun seriler tek izgarada. Bos hucre = o anda olcum yok "
+                   "ya da ayiklanmis.", bic["not"])
+    bas = ["Zaman (UTC)", "Ham (m)", "Ayiklanmis (m)",
+           "Kurulan gelgit (m)", "Artik = olculen - gelgit (m)"]
+    for j, b in enumerate(bas):
+        ws.write(1, j, b, bic["bas"])
+    ws.freeze_panes(2, 1)
+
+    izgara = ham.index if ham is not None else temiz.index
+    d = pd.DataFrame(index=izgara)
+    d["ham"] = ham
+    d["temiz"] = temiz
+    if gelgit is not None:
+        d["gelgit"] = gelgit
+        d["artik"] = artik
+    else:
+        d["gelgit"] = np.nan
+        d["artik"] = np.nan
+
+    # tz bilgisi Excel'e yazilamaz; UTC oldugu baslikta belirtiliyor
+    zaman = d.index.tz_localize(None)
+    for i, (t, sat) in enumerate(zip(zaman, d.itertuples(index=False)), 2):
+        ws.write_datetime(i, 0, t, bic["tar"])
+        for j, v in enumerate(sat, 1):
+            if v is not None and np.isfinite(v):
+                ws.write_number(i, j, float(v), bic["s4"])
+    print(f"   {len(d):,} satir")
+
+    # ---------------------------------------------------------------- 02
+    ws = wb.add_worksheet("02_BILESENLER")
+    ws.set_column(0, 0, 14)
+    ws.set_column(1, 6, 16)
+    r = 0
+    ws.write(r, 0, "Harmonik gelgit bilesenleri", bic["baslik"]); r += 1
+    ws.write(r, 0, "UTide (Codiga) ile cozuldu; T_TIDE'in surdurulen Python "
+                   "karsiligi. Yalniz SNR > 2 olan bilesenler. "
+                   "Kaynak: 05_harmonik_analiz.py", bic["not"])
+    ws.set_row(r, 26); r += 2
+
+    bil = csv_oku(f"01_gelgit_bilesenleri_{SLUG}.csv")
+    if bil is not None:
+        bas = ["Bilesen", "Genlik (m)", "Genlik (cm)", "Hata (cm)",
+               "Faz (derece)", "SNR", "Makale (cm)"]
+        for j, b in enumerate(bas):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        for _, s in bil.iterrows():
+            mk = MAKALE_GENLIK.get(s.bilesen)
+            ws.write(r, 0, s.bilesen, bic["met"])
+            ws.write_number(r, 1, s.genlik_cm / 100.0, bic["s4"])
+            ws.write_number(r, 2, s.genlik_cm,
+                            bic["vur"] if mk else bic["s3"])
+            ws.write_number(r, 3, s.genlik_hata_cm, bic["s3"])
+            ws.write_number(r, 4, s.faz_derece, bic["s1"])
+            ws.write_number(r, 5, s.SNR, bic["tam"])
+            if mk:
+                ws.write_number(r, 6, mk, bic["s2"])
+            r += 1
+        r += 1
+        ws.write(r, 0, "Sari hucreler makalede de raporlanan bilesenler; "
+                       "son sutun yayimlanmis deger.", bic["not"])
+    else:
+        ws.write(r, 0, "05_harmonik_analiz.py henuz calistirilmamis.")
+
+    # ---------------------------------------------------------------- 03
+    ws = wb.add_worksheet("03_GELGIT_DUZEYLERI")
+    ws.set_column(0, 0, 10)
+    ws.set_column(1, 1, 36)
+    ws.set_column(2, 5, 18)
+    r = 0
+    ws.write(r, 0, "Gelgit duzeyleri", bic["baslik"]); r += 1
+    ws.write(r, 0, "19 yillik astronomik ongoruden (18.6 yillik nodal "
+                   "dongu) sayilarak. Dogrusal egim ongoruye katilmaz; "
+                   "HAT/LAT tanimi geregi astronomik uc degerlerdir. "
+                   "Kaynak: 06_gelgit_seviyeleri.py", bic["not"])
+    ws.set_row(r, 32); r += 2
+
+    duz = csv_oku("02_gelgit_duzeyleri.csv")
+    if duz is not None:
+        bas = ["Duzey", "Aciklama", "m (MSL'e gore)",
+               "m (mevsimsel haric)", "formul (m)", "m (istasyon datumu)"]
+        for j, b in enumerate(bas):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        for _, s in duz.iterrows():
+            ws.write(r, 0, s.duzey, bic["met"])
+            ws.write(r, 1, s.aciklama, bic["met"])
+            ws.write_number(r, 2, s.su_seviyesi_m_MSL, bic["vur"])
+            for j, k in enumerate(["su_seviyesi_m_MSL_mevsimsel_haric",
+                                   "formul_m_MSL", "istasyon_datumu_m"], 3):
+                v = s.get(k)
+                if pd.notna(v):
+                    ws.write_number(r, j, float(v), bic["s3"])
+            r += 1
+        r += 1
+        ws.write(r, 0, "SA (yillik) ve SSA (yarim yillik) bu istasyonda "
+                       "M2'den buyuk ama buyuk olcude isinimsal/mevsimsel. "
+                       "Denizcilik tablolari kisa periyotlu gravitasyonel "
+                       "gelgiti verir; iki surum de sunuldu.", bic["not"])
+        ws.set_row(r, 32)
+
+    # ---------------------------------------------------------------- 04
+    ws = wb.add_worksheet("04_NONTIDAL")
+    ws.set_column(0, 0, 26)
+    ws.set_column(1, 6, 16)
+    r = 0
+    ws.write(r, 0, "Gelgit disi (non-tidal) su seviyesi", bic["baslik"])
+    r += 1
+    ws.write(r, 0, "artik = olculen - kurulan gelgit. Kaynak: "
+                   "07_non_tidal.py", bic["not"])
+    r += 2
+
+    oz = csv_oku("03_nontidal_ozet.csv")
+    if oz is not None:
+        for j, b in enumerate(["Donem", "Ortalama (cm)", "Std sapma (cm)",
+                               "En dusuk (cm)", "En yuksek (cm)",
+                               "Aralik (cm)", "TD"]):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        for _, s in oz.iterrows():
+            ws.write(r, 0, s.donem, bic["met"])
+            for j, k in enumerate(["ortalama_cm", "std_cm", "min_cm",
+                                   "max_cm", "aralik_cm", "TD"], 1):
+                ws.write_number(r, j, float(s[k]),
+                                bic["vur"] if k in ("std_cm", "TD")
+                                else bic["s2"])
+            r += 1
+        r += 1
+        ws.write(r, 0, "ONEMLI: artigin ORTALAMASI tanimi geregi sifirdir "
+                       "(seriden hem gelgit hem ortalama seviye "
+                       "cikarilmistir). Makalenin Tablo 3'unde de 18 "
+                       "istasyonun hepsi icin 'Mean = 0' yazar. Dagilimi "
+                       "temsil eden buyukluk STANDART SAPMA ve asagidaki "
+                       "yuzdeliklerdir.", bic["not"])
+        ws.set_row(r, 46); r += 2
+        ws.write(r, 0, "Makale ile karsilastirma (Tablo 3, Bozyazi)",
+                 bic["alt"]); r += 1
+        for j, b in enumerate(["Buyukluk", "Makale", "Bizim"]):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        ana = oz.iloc[0]
+        for et, mv, bv in [("Standart sapma (cm)", MAKALE_NONTIDAL_STD,
+                            float(ana.std_cm)),
+                           ("TD", MAKALE_TD, float(ana.TD)),
+                           ("Ortalama (cm)", 0.0, float(ana.ortalama_cm))]:
+            ws.write(r, 0, et, bic["met"])
+            ws.write_number(r, 1, mv, bic["s2"])
+            ws.write_number(r, 2, bv, bic["s2"])
+            r += 1
+
+    r += 1
+    yuz = csv_oku(f"04_nontidal_yuzdelikler_{SLUG}.csv")
+    if yuz is not None:
+        ws.write(r, 0, "Yuzdelikler", bic["alt"]); r += 1
+        for j, b in enumerate(["Yuzdelik (%)", "Seviye (cm)", "Seviye (m)"]):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        for _, s in yuz.iterrows():
+            ws.write_number(r, 0, float(s.yuzdelik), bic["s1"])
+            ws.write_number(r, 1, float(s.seviye_cm), bic["s2"])
+            ws.write_number(r, 2, float(s.seviye_cm) / 100.0, bic["s4"])
+            r += 1
+
+    # ---------------------------------------------------------------- 05
+    ws = wb.add_worksheet("05_DENIZ_SEVIYESI")
+    ws.set_column(0, 0, 12)
+    ws.set_column(1, 6, 16)
+    r = 0
+    ws.write(r, 0, "Deniz seviyesi degisimi", bic["baslik"]); r += 1
+    ws.write(r, 0, "Yillik ortalamalar dogrusal degil V bicimli; 2017'de "
+                   "minimum. Ayni V komsu istasyonlarda da var, yani isaret "
+                   "BOLGESEL. Bir V'nin inen koluna cekilen dogru trend "
+                   "degildir. Kaynak: 08_istasyon_karsilastir.py",
+             bic["not"])
+    ws.set_row(r, 32); r += 2
+
+    yil = temiz.groupby(temiz.index.year).mean()
+    say = temiz.groupby(temiz.index.year).count()
+    for j, b in enumerate(["Yil", "Ortalama seviye (m)", "Olcum sayisi"]):
+        ws.write(r, j, b, bic["bas"])
+    r += 1
+    for y in yil.index:
+        ws.write_number(r, 0, int(y), bic["tam"])
+        ws.write_number(r, 1, float(yil[y]), bic["s4"])
+        ws.write_number(r, 2, int(say[y]), bic["tam"])
+        r += 1
+
+    kar = csv_oku("06_istasyon_yillik_sapma.csv")
+    if kar is not None:
+        r += 1
+        ws.write(r, 0, "Istasyon karsilastirmasi - yillik ortalamanin "
+                       "kendi ortalamasindan sapmasi (cm)", bic["alt"])
+        r += 1
+        for j, b in enumerate(kar.columns):
+            ws.write(r, j, str(b), bic["bas"])
+        r += 1
+        for _, s in kar.iterrows():
+            for j, k in enumerate(kar.columns):
+                v = s[k]
+                if pd.isna(v):
+                    continue
+                ws.write_number(r, j, float(v),
+                                bic["tam"] if j == 0 else bic["s1"])
+            r += 1
+
+    # ---------------------------------------------------------------- 06
+    print("06_FIGURLER yaziliyor...")
+    ws = wb.add_worksheet("06_FIGURLER")
+    ws.set_column(0, 0, 4)
+    r = 0
+    ws.write(r, 1, "Uretilen figurler", bic["baslik"]); r += 2
+    for png, baslik in [
+        (f"01_nontidal_pdf_cdf_{SLUG}.png",
+         "Gelgit disi su seviyesi - PDF / CDF (makaledeki gibi 10 kutu)"),
+        (f"01b_nontidal_pdf_cdf_ince_{SLUG}.png",
+         "Ayni dagilim, ince kutulama (2 cm)"),
+        (f"02_nontidal_zaman_serisi_{SLUG}.png",
+         "Gelgit disi su seviyesinin zaman serisi"),
+        ("03_istasyon_karsilastirma.png",
+         "Levantin kiyisi istasyonlari - yillik ortalama seviye"),
+        ("00_dogrulama_temmuz2025.png",
+         "Ayiklama dogrulamasi - Temmuz 2025 (blok hata)"),
+        ("00_dogrulama_eylul2025.png",
+         "Ayiklama dogrulamasi - Eylul 2025 (tekil sivri)"),
+        ("00_dogrulama_nisan2024.png",
+         "Ayiklama dogrulamasi - 27 Nisan 2024"),
+        ("00_tani_kesikler.png",
+         "Kesiklerin kaynagi: portalda olmayan olcumler"),
+    ]:
+        ws.write(r, 1, baslik, bic["alt"])
+        r += 1
+        if resim_ekle(ws, r, 1, png):
+            r += 28
+        else:
+            ws.write(r, 1, "(figur bulunamadi)", bic["not"])
+            r += 2
+
+    wb.close()
+    mb = CIKTI.stat().st_size / 1024 / 1024
+    print(f"\nyazildi: {CIKTI}  ({mb:.1f} MB)")
+
+
+if __name__ == "__main__":
+    main()

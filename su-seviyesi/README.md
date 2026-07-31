@@ -86,8 +86,33 @@ Sırayla çalıştırılır:
 | `06_gelgit_seviyeleri.py` | Standart gelgit düzeyleri tablosu |
 | `07_non_tidal.py` | Gelgit dışı bileşen, PDF/CDF, TD |
 | `08_istasyon_karsilastir.py` | Komşu istasyonlarla karşılaştırma (trend sorusu) |
+| `10_excel_olustur.py` | Bütün sonuçları tek Excel kitabında toplar |
 
 `ortak.py` paylaşılan sabitleri ve işlevleri tutar — tek tanım yeri.
+
+İki defter var:
+
+| Defter | Ne yapar |
+|---|---|
+| [`colab_baslat.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/colab_baslat.ipynb) | Zinciri çalıştırır |
+| [`analiz_raporu.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/analiz_raporu.ipynb) | Sonuçları formülleri ve grafikleriyle anlatır |
+
+## Bir kez çöz, çok kez kullan
+
+Zincirin tek ağır adımı `05`: 15 dakikalık çözünürlükte 300.000 nokta için
+UTide'ın tasarım matrisi birkaç GB tutuyor. Bu yüzden `05` çözümü
+(`data/coef_*.pkl`) ve türettiği serileri diske yazar:
+
+| Dosya | İçerik |
+|---|---|
+| `coef_*.pkl` | UTide çözümü — genlikler, fazlar, güven aralıkları |
+| `bozyazi_gelgit_*.dat.gz` | Kurulan gelgit öngörüsü |
+| `bozyazi_artik_*.dat.gz` | Gelgit dışı artık |
+| `bozyazi_ongoru_19yil*.dat.gz` | 19 yıllık astronomik öngörü |
+
+`06` ve `07` bunları okur, yeniden çözmez. Yani figürlerde değişiklik
+yapmak (harita eklemek, renk değiştirmek) için ağır adımı tekrarlamaya
+gerek yok.
 
 ## Deniz seviyesi trendi hakkında
 
