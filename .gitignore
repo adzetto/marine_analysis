@@ -1,0 +1,5 @@
+# Klasorun kendisinin arsivlenmis kopyalari. Depoda zaten izlenen
+# dosyalarin ayni oldugu icin gereksiz; 50 MB'i asinca GitHub da uyariyor.
+*.rar
+*.zip
+*.7z
