@@ -1,0 +1,40 @@
+donem,tanim,esik_cm,olay,ortalama_cm,std_cm,en_buyuk_cm,olay_yil
+makale,A. Butun pozitif artiklarin ortalamasi,0.0,151870,7.727,6.426,55.2,17689.243
+makale,B. %90 yuzdeligin ustu (her olcum ayri),12.21,30061,18.108,5.537,55.2,3501.392
+makale,B. %95 yuzdeligin ustu (her olcum ayri),16.51,15041,22.061,5.336,55.2,1751.919
+makale,B. %98 yuzdeligin ustu (her olcum ayri),21.75,6015,26.987,5.248,55.2,700.604
+makale,B. %99 yuzdeligin ustu (her olcum ayri),25.06,3005,30.64,5.249,55.2,350.011
+makale,B. %99.5 yuzdeligin ustu (her olcum ayri),29.4,1504,34.463,4.919,55.2,175.18
+makale,C. %90 ustu BAGIMSIZ tepeler (48 sa ayrim),12.21,130,19.946,8.313,55.2,15.142
+makale,C. %95 ustu BAGIMSIZ tepeler (48 sa ayrim),16.51,99,24.135,7.574,55.2,11.531
+makale,C. %98 ustu BAGIMSIZ tepeler (48 sa ayrim),21.75,52,29.57,7.88,55.2,6.057
+makale,C. %99 ustu BAGIMSIZ tepeler (48 sa ayrim),25.06,43,32.01,7.439,55.2,5.008
+makale,C. %99.5 ustu BAGIMSIZ tepeler (48 sa ayrim),29.4,23,38.05,7.633,55.2,2.679
+makale,D. Yillik en yuksek degerlerin ortalamasi (8 yil),,8,36.032,11.731,55.2,1.0
+makale,D. Aylik en yuksek degerlerin ortalamasi (105 ay),,105,19.689,10.699,55.2,12.0
+son5,A. Butun pozitif artiklarin ortalamasi,0.0,78561,7.453,8.192,77.53,16399.829
+son5,B. %90 yuzdeligin ustu (her olcum ayri),10.47,16777,19.356,10.226,77.53,3502.246
+son5,B. %95 yuzdeligin ustu (her olcum ayri),15.626,8399,26.043,10.828,77.53,1753.315
+son5,B. %98 yuzdeligin ustu (her olcum ayri),24.466,3360,36.376,10.294,77.53,701.409
+son5,B. %99 yuzdeligin ustu (her olcum ayri),33.43,1678,44.214,9.056,77.53,350.287
+son5,B. %99.5 yuzdeligin ustu (her olcum ayri),42.32,839,51.186,7.741,77.53,175.144
+son5,C. %90 ustu BAGIMSIZ tepeler (48 sa ayrim),10.47,84,23.911,16.197,77.53,17.535
+son5,C. %95 ustu BAGIMSIZ tepeler (48 sa ayrim),15.626,58,29.815,16.659,77.53,12.108
+son5,C. %98 ustu BAGIMSIZ tepeler (48 sa ayrim),24.466,24,45.041,16.379,77.53,5.01
+son5,C. %99 ustu BAGIMSIZ tepeler (48 sa ayrim),33.43,17,53.076,12.887,77.53,3.549
+son5,C. %99.5 ustu BAGIMSIZ tepeler (48 sa ayrim),42.32,13,57.628,11.27,77.53,2.714
+son5,D. Yillik en yuksek degerlerin ortalamasi (4 yil),,4,58.088,13.035,76.8,1.0
+son5,D. Aylik en yuksek degerlerin ortalamasi (61 ay),,61,22.927,18.69,77.53,12.0
+son10,A. Butun pozitif artiklarin ortalamasi,0.0,172221,8.646,8.354,84.33,17681.173
+son10,B. %90 yuzdeligin ustu (her olcum ayri),12.84,34118,21.373,10.093,84.33,3502.745
+son10,B. %95 yuzdeligin ustu (her olcum ayri),17.68,17067,27.839,10.869,84.33,1752.194
+son10,B. %98 yuzdeligin ustu (her olcum ayri),26.09,6827,37.996,10.716,84.33,700.898
+son10,B. %99 yuzdeligin ustu (her olcum ayri),34.68,3415,46.21,9.426,84.33,350.603
+son10,B. %99.5 yuzdeligin ustu (her olcum ayri),43.55,1705,53.68,7.786,84.33,175.045
+son10,C. %90 ustu BAGIMSIZ tepeler (48 sa ayrim),12.84,173,25.834,15.929,84.33,17.761
+son10,C. %95 ustu BAGIMSIZ tepeler (48 sa ayrim),17.68,125,31.883,16.45,84.33,12.833
+son10,C. %98 ustu BAGIMSIZ tepeler (48 sa ayrim),26.09,60,44.69,16.689,84.33,6.16
+son10,C. %99 ustu BAGIMSIZ tepeler (48 sa ayrim),34.68,40,53.094,14.293,84.33,4.107
+son10,C. %99.5 ustu BAGIMSIZ tepeler (48 sa ayrim),43.55,31,59.206,10.889,84.33,3.183
+son10,D. Yillik en yuksek degerlerin ortalamasi (9 yil),,9,55.39,21.776,80.66,1.0
+son10,D. Aylik en yuksek degerlerin ortalamasi (121 ay),,121,24.079,18.878,84.33,12.0

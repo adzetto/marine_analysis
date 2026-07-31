@@ -47,6 +47,8 @@ ADIMLAR = [
     ("Donem: son bes yil", ["13_donem_kosucu.py", "son5"], True),
     ("Donem: son on yil", ["13_donem_kosucu.py", "son10"], True),
     ("Donem: kaydin tamami", ["13_donem_kosucu.py", "tum"], True),
+    ("Yuksek kabarmalarin ortalamasi",
+     ["14_yuksek_kabarma_ortalamasi.py"], False),
     ("Dort istasyonda dogrulama", ["12_cok_istasyon_dogrula.py"], True),
     ("Azami araligin yillik oynamasi", ["09_azami_aralik_tani.py"], True),
     ("Komsu istasyon kiyaslamasi", ["08_istasyon_karsilastir.py"], False),

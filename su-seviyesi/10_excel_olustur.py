@@ -478,6 +478,65 @@ def main():
                      "Ayni dagilimin betikle uretilen surumu "
                      "(istasyon konumu yildizla):", bic["alt"])
 
+    # --- YUKSEK kabarmalarin ortalamasi (hocanin sordugu buyukluk) ---
+    kb = csv_oku("11_yuksek_kabarma_ortalamasi.csv")
+    if kb is not None:
+        r += 2
+        ws.write(r, 0, "SU YUKSELMELERININ ORTALAMASI", bic["baslik"])
+        r += 1
+        ws.write(r, 0, "Artigin TUMUNUN ortalamasi sifirdir; asagidaki ise "
+                       "YUKSEK degerlerin ortalamasi, yani tipik bir "
+                       "firtinanin suyu ne kadar kabarttigi. C satirlari "
+                       "muhendislikte kullanilan tanimdir: esigi asan "
+                       "ardisik olcumler tek bir OLAY sayilir, iki olay "
+                       "ancak aralarinda 48 saatten uzun ara varsa ayri "
+                       "sayilir. Kaynak: 14_yuksek_kabarma_ortalamasi.py",
+                 bic["not"])
+        ws.set_row(r, 60); r += 1
+        for j, b in enumerate(["Donem", "Tanim", "Esik (cm)", "Olay",
+                               "ORTALAMA (cm)", "Std sapma (cm)",
+                               "En buyuk (cm)", "Olay/yil"]):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        for _, s in kb.iterrows():
+            ws.write(r, 0, str(s.donem), bic["met"])
+            ws.write(r, 1, str(s.tanim), bic["met"])
+            for j, k in enumerate(["esik_cm", "olay", "ortalama_cm",
+                                   "std_cm", "en_buyuk_cm", "olay_yil"], 2):
+                v = s.get(k)
+                if pd.notna(v):
+                    ws.write_number(r, j, float(v),
+                                    bic["tam"] if k == "olay"
+                                    else bic["vur"] if k == "ortalama_cm"
+                                    else bic["s2"])
+            r += 1
+
+    # --- yillik kabarma, istasyonlar arasi ---
+    ki = csv_oku("12_yillik_kabarma_istasyonlar.csv")
+    if ki is not None:
+        r += 2
+        ws.write(r, 0, "Yillik en yuksek kabarma - istasyonlar arasi",
+                 bic["alt"]); r += 1
+        ws.write(r, 0, "Bozyazi'da yillik en yuksek kabarma 2019'dan sonra "
+                       "kabaca ikiye katlaniyor; komsu istasyonlarda boyle "
+                       "bir artis YOK (oranlar 0.90-1.04). Ayni donemde "
+                       "Bozyazi'da ayiklanan olcum orani da %0.1'den "
+                       "%2-6'ya cikiyor. Bu yuzden raporlanan deger temiz "
+                       "donemden (makale penceresi) alinmistir. "
+                       "Kaynak: 14_yuksek_kabarma_ortalamasi.py", bic["not"])
+        ws.set_row(r, 60); r += 1
+        for j, b in enumerate(ki.columns):
+            ws.write(r, j, str(b), bic["bas"])
+        r += 1
+        for _, s in ki.iterrows():
+            for j, k in enumerate(ki.columns):
+                v = s[k]
+                if pd.isna(v):
+                    continue
+                ws.write_number(r, j, float(v),
+                                bic["tam"] if j == 0 else bic["s1"])
+            r += 1
+
     r += 1
     yuzs = {k: csv_oku(f"04_nontidal_yuzdelikler_{k}.csv") for k in KODLAR}
     yuzs = {k: v for k, v in yuzs.items() if v is not None}
@@ -644,6 +703,8 @@ def main():
              f"[{k}] Ayni dagilim, ince kutulama (2 cm)"),
             (f"02_nontidal_zaman_serisi_{k}.png",
              f"[{k}] Gelgit disi su seviyesinin zaman serisi"),
+            (f"04_kabarma_tepeleri_{k}.png",
+             f"[{k}] Bagimsiz firtina kabarmalari ve ortalamalari"),
         ]
     for png, baslik in figurler + [
         ("03_istasyon_karsilastirma.png",
