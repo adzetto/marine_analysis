@@ -126,16 +126,13 @@ def main():
         print(f"    {r.t}   {r.seviye:.4f}")
 
     # --- yaz ---
-    CIKTI.parent.mkdir(parents=True, exist_ok=True)
-    with open(CIKTI, "w", encoding="utf-8") as f:
-        f.write("# Bozyazi mareograf istasyonu - deniz seviyesi (ham)\n")
-        f.write("# kaynak: TUDES / Harita Genel Mudurlugu, istasyon id 11\n")
-        f.write("# zaman UTC, seviye metre (istasyon yerel datumu)\n")
-        f.write("# yil ay gun saat dakika seviye_m\n")
-        for t, v in zip(d.t, d.seviye):
-            f.write(f"{t.year} {t.month:2d} {t.day:2d} {t.hour:2d} "
-                    f"{t.minute:2d} {v:9.4f}\n")
-    print(f"\nyazildi: {CIKTI}  ({CIKTI.stat().st_size/1024/1024:.1f} MB)")
+    from ortak import yaz
+    p = yaz(pd.Series(d.seviye.values, index=d.t), "bozyazi_ham.dat", [
+        "Bozyazi mareograf istasyonu - deniz seviyesi (ham)",
+        "kaynak: TUDES / Harita Genel Mudurlugu, istasyon id 11",
+        "zaman UTC, seviye metre (istasyon yerel datumu)",
+    ])
+    print(f"\nyazildi: {p}  ({p.stat().st_size/1024/1024:.1f} MB)")
 
 
 if __name__ == "__main__":

@@ -44,9 +44,10 @@ try:
 except Exception:
     pass
 
+from ortak import veri_yolu, yaz
+
 BASE = Path(__file__).resolve().parent
-GIRDI = BASE / "data" / "bozyazi_ham.dat"
-CIKTI = BASE / "data" / "bozyazi_temiz.dat"
+GIRDI = veri_yolu("bozyazi_ham.dat")
 RAPOR = BASE / "tables" / "00_ayiklama_raporu.txt"
 
 ADIM = "15min"
@@ -167,20 +168,15 @@ def main():
         print(f"    {y}  {v_:.4f}")
 
     # --- yaz ---
-    CIKTI.parent.mkdir(parents=True, exist_ok=True)
     RAPOR.parent.mkdir(parents=True, exist_ok=True)
-    d = s_i.dropna()
-    with open(CIKTI, "w", encoding="utf-8") as f:
-        f.write("# Bozyazi mareograf - AYIKLANMIS deniz seviyesi\n")
-        f.write("# kaynak: TUDES / Harita Genel Mudurlugu, istasyon id 11\n")
-        f.write("# zaman UTC, seviye metre (istasyon yerel datumu)\n")
-        f.write(f"# ayiklanan {atilan} olcum, 1 gunden kisa bosluk "
-                f"interpolasyonla dolduruldu\n")
-        f.write("# yil ay gun saat dakika seviye_m\n")
-        for t, v_ in d.items():
-            f.write(f"{t.year} {t.month:2d} {t.day:2d} {t.hour:2d} "
-                    f"{t.minute:2d} {v_:9.4f}\n")
-    print(f"\nyazildi: {CIKTI}")
+    p = yaz(s_i.dropna(), "bozyazi_temiz.dat", [
+        "Bozyazi mareograf - AYIKLANMIS deniz seviyesi",
+        "kaynak: TUDES / Harita Genel Mudurlugu, istasyon id 11",
+        "zaman UTC, seviye metre (istasyon yerel datumu)",
+        f"ayiklanan {atilan} olcum, 1 gunden kisa bosluk interpolasyonla "
+        f"dolduruldu",
+    ])
+    print(f"\nyazildi: {p}")
 
     with open(RAPOR, "w", encoding="utf-8") as f:
         f.write("BOZYAZI SEVIYE VERISI - AYIKLAMA RAPORU\n")

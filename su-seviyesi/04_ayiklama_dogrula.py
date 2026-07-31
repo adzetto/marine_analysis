@@ -109,7 +109,8 @@ def pencere_ciz(ham, temiz, bas, bit, baslik, dosya):
 
 
 def main():
-    ham = oku(BASE / "data" / "bozyazi_ham.dat")
+    from ortak import veri_yolu
+    ham = oku(veri_yolu("bozyazi_ham.dat"))
     tam = pd.date_range(ham.index.min(), ham.index.max(), freq="15min",
                         tz="UTC")
     ham = ham.reindex(tam)

@@ -1,11 +1,13 @@
-# Ham indirme onbellegi ve turetilen buyuk veri dosyalari.
-# 01_tudes_indir.py bunlari birkac dakikada yeniden uretir, bu yuzden depoda
-# tutulmalarina gerek yok. Ayrica TUDES verisi portalda bir lisans/telif
-# sozlesmesi onaylanarak indiriliyor; toplu veriyi ACIK bir depoya koymak
-# o sozlesmenin kapsami disina cikabilir.
+# Ham indirme onbellegi (111 parca JSON, ~33 MB). 01_tudes_indir.py yeniden
+# uretir; depoda tutmaya gerek yok.
 data/ham/
-data/*.dat
 data/*.npy
+
+# Birlestirilmis seriler .dat.gz olarak DEPODA TUTULUYOR (15 MB -> 2.3 MB).
+# Sebep: tudes.harita.gov.tr Turkiye disindaki cozumleyicilerden (1.1.1.1,
+# 9.9.9.9 ve Colab dahil) cozulemiyor. Veri repoyla gitmezse bulut
+# ortamlarinda zincir 01'de duruyor.
+data/*.dat
 
 # Elsevier telifli makale - acik depoya konulamaz.
 yalcinyuksel-2023.pdf

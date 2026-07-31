@@ -48,9 +48,41 @@ DONEMLER = [
 ]
 
 
+def veri_yolu(dosya):
+    """Verinin sikistirilmis ya da duz halini bulur.
+
+    Depoya veri .gz olarak konuluyor (15 MB metin 2.3 MB'a iniyor). Yerelde
+    calisirken duz .dat da olusabildigi icin once o aranir. pandas ve gzip
+    uzantiya bakarak acmayi kendisi hallettiginden okuyucularin fark
+    gormesi gerekmiyor.
+    """
+    p = VERI / dosya
+    if p.exists():
+        return p
+    gz = VERI / (dosya + ".gz")
+    if gz.exists():
+        return gz
+    raise FileNotFoundError(f"{p} ya da {gz} bulunamadi. Once 01/02/03 "
+                            f"betiklerini calistirin.")
+
+
+def yaz(seri, dosya, basliklar):
+    """Seriyi .dat.gz olarak yazar."""
+    import gzip
+    VERI.mkdir(parents=True, exist_ok=True)
+    with gzip.open(VERI / (dosya + ".gz"), "wt", encoding="utf-8") as f:
+        for b in basliklar:
+            f.write(f"# {b}\n")
+        f.write("# yil ay gun saat dakika seviye_m\n")
+        for t, v in seri.items():
+            f.write(f"{t.year} {t.month:2d} {t.day:2d} {t.hour:2d} "
+                    f"{t.minute:2d} {v:9.4f}\n")
+    return VERI / (dosya + ".gz")
+
+
 def oku(dosya="bozyazi_temiz.dat"):
     """Ayiklanmis seriyi UTC indeksli pandas Series olarak dondurur."""
-    d = pd.read_csv(VERI / dosya, sep=r"\s+", comment="#", header=None,
+    d = pd.read_csv(veri_yolu(dosya), sep=r"\s+", comment="#", header=None,
                     names=["yil", "ay", "gun", "saat", "dk", "sev"])
     t = pd.to_datetime(d[["yil", "ay", "gun", "saat", "dk"]].rename(columns={
         "yil": "year", "ay": "month", "gun": "day", "saat": "hour",
