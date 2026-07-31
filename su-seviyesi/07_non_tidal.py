@@ -94,6 +94,12 @@ def yz(latex_metin, duz_metin):
     return latex_metin if LATEX else duz_metin
 
 
+def slug(ad):
+    return (ad.replace(" ", "_").replace("ı", "i").replace("ö", "o")
+            .replace("ü", "u").replace("ç", "c").replace("ş", "s")
+            .replace("ğ", "g"))
+
+
 def pdf_cdf_ciz(art, baslik, dosya):
     """Makale Fig. 6 duzeninde: kirmizi PDF (sol), mavi CDF (sag)."""
     v = art.dropna().values
@@ -197,6 +203,31 @@ def main():
         print("   ", "  ".join(f"%{p}={v:+.1f}" for p, v in
                                zip(YUZDELIK, q)))
 
+        # Her donem biter bitmez yazilir/cizilir. En buyuk pencere dar
+        # bellekli ortamlarda islemin oldurulmesine yol acabildigi icin,
+        # sonda toplu yazmak tamamlanmis donemleri de kaybettiriyordu.
+        with open(TABLO / "03_nontidal_ozet.csv", "w", encoding="utf-8") as f:
+            f.write("donem,ortalama_cm,std_cm,min_cm,max_cm,aralik_cm,TD\n")
+            for k_, (i_, _) in ozet.items():
+                f.write(f"{k_},{i_['ortalama_cm']:.4f},{i_['std_cm']:.3f},"
+                        f"{i_['min_cm']:.2f},{i_['max_cm']:.2f},"
+                        f"{i_['aralik_cm']:.2f},{i_['TD']:.4f}\n")
+        with open(TABLO / f"04_nontidal_yuzdelikler_{slug(ad)}.csv", "w",
+                  encoding="utf-8") as f:
+            f.write("yuzdelik,seviye_cm\n")
+            for p_, v_ in zip(YUZDELIK, q):
+                f.write(f"{p_},{v_:.2f}\n")
+        pdf_cdf_ciz(artik,
+                    yz(rf"Bozyaz\i{{}} - gelgit d\i{{}}\c{{s}}\i{{}} su "
+                       rf"seviyesi ({a}--{b})",
+                       f"Bozyazı - gelgit dışı su seviyesi ({a}-{b})"),
+                    f"01_nontidal_pdf_cdf_{slug(ad)}")
+        zaman_serisi_ciz(artik,
+                         yz(rf"Bozyaz\i{{}} - $\eta_{{nt}}$ ({a}--{b})",
+                            f"Bozyazı - $\\eta_{{nt}}$ ({a}-{b})"),
+                         f"02_nontidal_zaman_serisi_{slug(ad)}")
+        print()
+
     # --- makale ile karsilastirma ---
     ist, artik = ozet["makale penceresi"]
     print("\n" + "=" * 76)
@@ -212,39 +243,7 @@ def main():
     ]:
         print(f"  {et:<26}{mv:>10.2f}{bv:>10.2f}{bv-mv:>+10.2f}")
 
-    # --- figurler ve tablo: birincil donem ---
-    print("\n--- figurler ---")
-    for ad, dosya, bas in [
-        ("temiz on yil", "01_nontidal_pdf_cdf",
-         yz(r"Bozyaz\i{} - gelgit d\i{}\c{s}\i{} su seviyesi (2010--2019)",
-            "Bozyazı - gelgit dışı su seviyesi (2010-2019)")),
-        ("son bes yil", "01b_nontidal_pdf_cdf_son5yil",
-         yz(r"Bozyaz\i{} - gelgit d\i{}\c{s}\i{} su seviyesi (2021--2025)",
-            "Bozyazı - gelgit dışı su seviyesi (2021-2025)")),
-    ]:
-        pdf_cdf_ciz(ozet[ad][1], bas, dosya)
-    zaman_serisi_ciz(
-        ozet["tum kayit"][1],
-        yz(r"Bozyaz\i{} - gelgit d\i{}\c{s}\i{} su seviyesi de\u{g}i\c{s}imi",
-           "Bozyazı - gelgit dışı su seviyesi değişimi"),
-        "02_nontidal_zaman_serisi")
-
-    yol = TABLO / "03_nontidal_ozet.csv"
-    with open(yol, "w", encoding="utf-8") as f:
-        f.write("donem,ortalama_cm,std_cm,min_cm,max_cm,aralik_cm,TD\n")
-        for ad, (i_, _) in ozet.items():
-            f.write(f"{ad},{i_['ortalama_cm']:.4f},{i_['std_cm']:.3f},"
-                    f"{i_['min_cm']:.2f},{i_['max_cm']:.2f},"
-                    f"{i_['aralik_cm']:.2f},{i_['TD']:.4f}\n")
-    print(f"\nyazildi: {yol}")
-
-    art = ozet["temiz on yil"][1].dropna().values * 100
-    yol2 = TABLO / "04_nontidal_yuzdelikler.csv"
-    with open(yol2, "w", encoding="utf-8") as f:
-        f.write("yuzdelik,seviye_cm\n")
-        for p in YUZDELIK:
-            f.write(f"{p},{np.percentile(art, p):.2f}\n")
-    print(f"yazildi: {yol2}")
+    print(f"\ntablolar ve figurler yazildi: {TABLO} , {FIG}")
 
 
 if __name__ == "__main__":

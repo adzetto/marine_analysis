@@ -16,6 +16,16 @@ Konum: 36.104° K, 32.948° D — Levantin (Doğu Akdeniz) kıyısı.
    MLW, MLLW, MLWS, LAT)
 6. Gelgit dışı (non-tidal) su seviyesi: dağılım, PDF/CDF, aşılma
 
+## Analiz dönemi
+
+Birincil ve tek analiz dönemi **01.01.2010 – 13.03.2018**, yani makalenin
+Bozyazı penceresi. Makale 2009'da başlıyor ama portalda Bozyazı kaydı 2010
+başında başlıyor; bitiş tarihi makaleyle birebir aynı tutuldu ki sonuçlar
+yayımlanmış değerlerle doğrudan karşılaştırılabilsin.
+
+Bu aynı zamanda kaydın en sağlam bölümü (aşağıya bakınız). Başka pencereler
+gerekirse `ortak.EK_DONEMLER` içinde hazır duruyor.
+
 ## Veri
 
 Portal `POST /Portal/VeriSorgula` uç noktasıyla JSON döndürüyor; sayfadaki
@@ -67,8 +77,38 @@ Sırayla çalıştırılır:
 | `05_harmonik_analiz.py` | UTide harmonik çözümü, makaleyle karşılaştırma, trend |
 | `06_gelgit_seviyeleri.py` | Standart gelgit düzeyleri tablosu |
 | `07_non_tidal.py` | Gelgit dışı bileşen, PDF/CDF, TD |
+| `08_istasyon_karsilastir.py` | Komşu istasyonlarla karşılaştırma (trend sorusu) |
 
 `ortak.py` paylaşılan sabitleri ve işlevleri tutar — tek tanım yeri.
+
+## Deniz seviyesi trendi hakkında
+
+Yıllık ortalamalar doğrusal değil, **V biçimli**: kendi ortalamasından sapma
+2010'da +6,0 cm, 2017'de −11,1 cm, 2024'te +8,9 cm. Bir V'nin inen koluna
+doğru çekilen doğru eğilim değil, o kolun eğimidir — nitekim 2010–2019 için
+−11,3 mm/yıl, 2021–2026 için +4,6 mm/yıl çıkıyor.
+
+`08_istasyon_karsilastir.py` bu V'nin **Taşucu, Erdemli ve Antalya'da da
+aynı şekilde bulunduğunu** gösterdi (2017 minimumu dördünde de var,
+r = 0,75–0,81). Yani sinyal bölgesel ve gerçek, Bozyazı'nın cihaz hatası
+değil. Ancak 16 yıl, on yıllık değişkenliğin baskın olduğu bir seride trend
+kestirmek için kısadır; güvenilir bir deniz seviyesi trendi genelde 30+ yıl
+ister.
+
+Bağımsız doğrulama yolu: TUDES aylık ortalamalarını her yıl **PSMSL**'e
+gönderiyor ve PSMSL kayıtları röpere indirgenmiş (RLR) olduğu için trend
+sorusu asıl orada yanıtlanmalıdır.
+
+## Veri kalitesi üzerine
+
+TUDES 10 saniyede bir ölçüp **15 dakikalık ortalama** yazıyor; yani
+elimizdeki değerler anlık değil. Tekil elektriksel gürültü bu ortalamada
+zaten sönümlendiği için geriye kalan sivriler gerçek arızadır.
+
+Portalın kendi kaydında 1.066 boşluk olayı var: 694'ü tek ölçüm (15 dk),
+204'ü 2–4 ölçüm, 158'i 1 saat–1 gün, 10'u 1 günden uzun. Olayların %84'ü
+bir saatten kısa. 1 günden kısa boşluklar interpolasyonla doldurulur
+(makalenin izlediği kural).
 
 ## Kurulum
 

@@ -33,7 +33,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import argrelextrema
 
-from ortak import (TABLO, bilesen_sozlugu, coz, kes, oku)
+from ortak import (TABLO, PAPER_BAS, PAPER_BIT, bilesen_sozlugu, coz, kes,
+                   oku)
 import utide
 
 try:
@@ -41,7 +42,7 @@ try:
 except Exception:
     pass
 
-ANALIZ_A, ANALIZ_B = 2010, 2019      # bilesenlerin cozuldugu donem
+ANALIZ_A, ANALIZ_B = PAPER_BAS, PAPER_BIT   # bilesenlerin cozuldugu donem
 ONGORU_YIL = 19                      # 18.6 yillik nodal dongu icin
 ADIM_DK = 10                         # ongoru adimi (uc degerleri kacirmamak)
 VURUM_GUN = 14.765                   # M2-S2 bahar/olusum vurum periyodu
@@ -69,8 +70,8 @@ def main():
     h = bilesen_sozlugu(coef)
 
     # --- 19 yillik astronomik ongoru ---
-    t = pd.date_range(f"{ANALIZ_A}-01-01", periods=int(ONGORU_YIL*365.25*24*60
-                                                       / ADIM_DK),
+    t = pd.date_range(ANALIZ_A, periods=int(ONGORU_YIL * 365.25 * 24 * 60
+                                            / ADIM_DK),
                       freq=f"{ADIM_DK}min")
     ong = utide.reconstruct(t, coef, verbose=False, min_SNR=2)
     y = np.asarray(ong.h, float)

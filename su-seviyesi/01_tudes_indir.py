@@ -60,9 +60,20 @@ BASE = Path(__file__).resolve().parent
 HAM = BASE / "data" / "ham"
 
 SORGU = "https://tudes.harita.gov.tr/Portal/VeriSorgula"
-ISTASYON = "11"          # Bozyazi
-ISTASYON_ADI = "Bozyazi"
 VERI_CESIDI = "DenizSeviyesi"
+
+# Portaldaki istasyon kimlikleri. Bozyazi asil istasyonumuz; digerleri
+# Bozyazi'daki gorunur egilimin bolgesel mi yoksa cihaza mi ait oldugunu
+# ayirt etmek icin kullanilir (hepsi ayni Levantin kiyisinda ve makalede
+# yer aliyor).
+ISTASYONLAR = {
+    "bozyazi": "11",
+    "tasucu": "12",
+    "erdemli": "3",
+    "antalya": "20",
+}
+ISTASYON_ADI = "bozyazi"          # varsayilan; komut satirindan degistirilir
+ISTASYON = ISTASYONLAR[ISTASYON_ADI]
 
 # Portalda Bozyazi icin en eski veri 2010 basi. Bugune kadar indirilir.
 BASLANGIC = dt.date(2010, 1, 1)
@@ -134,6 +145,17 @@ def indir(s, tok, bas, bit, deneme=4):
 
 
 def main():
+    # Komut satirindan istasyon secilebilir:  python 01_tudes_indir.py tasucu
+    global ISTASYON, ISTASYON_ADI, HAM
+    if len(sys.argv) > 1:
+        ad = sys.argv[1].lower()
+        if ad not in ISTASYONLAR:
+            sys.exit(f"Bilinmeyen istasyon {ad!r}. "
+                     f"Secenekler: {', '.join(ISTASYONLAR)}")
+        ISTASYON_ADI = ad
+        ISTASYON = ISTASYONLAR[ad]
+    HAM = BASE / "data" / "ham" / ISTASYON_ADI
+
     HAM.mkdir(parents=True, exist_ok=True)
     dilimler = list(parcalar(BASLANGIC, BITIS, PARCA_GUN))
 
@@ -149,7 +171,7 @@ def main():
     yeni = 0
 
     for i, (a, b) in enumerate(dilimler, 1):
-        hedef = HAM / f"bozyazi_{a:%Y%m%d}_{b:%Y%m%d}.json"
+        hedef = HAM / f"{ISTASYON_ADI}_{a:%Y%m%d}_{b:%Y%m%d}.json"
         if hedef.exists():
             n = len(json.loads(hedef.read_text(encoding="utf-8")))
             toplam += n

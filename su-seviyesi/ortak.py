@@ -40,11 +40,31 @@ MAKALE_MSL = 0.135              # m, Tablo 1
 YARIGUNLUK = ["M2", "S2", "N2", "K2"]
 GUNLUK = ["K1", "O1", "P1", "S1"]
 
+# Birincil analiz donemi: makalenin Bozyazi penceresi.
+#
+# Makale 01.01.2009-13.03.2018 kullanmis. Portalda Bozyazi kaydi 2010
+# basinda basladigi icin 2009 alinamiyor; bitis tarihi makaleyle birebir
+# ayni tutuluyor. Boylece sonuclar yayimlanmis degerlerle dogrudan
+# karsilastirilabilir oluyor.
+#
+# Bu ayni zamanda kaydin en saglam bolumu: 2010-2019 doluluk %99.7-100,
+# buna karsilik 2023'te -371/+776 m gibi okumalar, 2024'te saatlerce suren
+# kaymis blok, 2025-2026'da %93 ve %79 doluluk var.
+PAPER_BAS = "2010-01-01"
+PAPER_BIT = "2018-03-13"
+
 DONEMLER = [
-    ("makale penceresi", 2010, 2018),
-    ("temiz on yil", 2010, 2019),
-    ("son bes yil", 2021, 2025),
-    ("tum kayit", 2010, 2026),
+    ("makale penceresi", PAPER_BAS, PAPER_BIT),
+]
+
+# Istege bagli ek pencereler. Hocanin "son bes yil" istegi ya da trend
+# incelemesi icin DONEMLER'e eklenebilir; varsayilan olarak kapali, cunku
+# her ek pencere 15 dakikalik cozunurlukte ayri bir en kucuk kareler
+# cozumu demek.
+EK_DONEMLER = [
+    ("temiz on yil", "2010-01-01", "2019-12-31"),
+    ("son bes yil", "2021-01-01", "2025-12-31"),
+    ("tum kayit", "2010-01-01", "2026-12-31"),
 ]
 
 
@@ -91,7 +111,17 @@ def oku(dosya="bozyazi_temiz.dat"):
 
 
 def kes(s, a, b):
-    return s[(s.index.year >= a) & (s.index.year <= b)]
+    """Seriyi [a, b] araligina keser.
+
+    a ve b ya yil (int) ya da 'YYYY-AA-GG' metni olabilir. Metin verilirse
+    bitis gunu tumuyle dahil edilir; boylece makale penceresinin bitisi
+    (13.03.2018) birebir yakalanir.
+    """
+    if isinstance(a, int):
+        return s[(s.index.year >= a) & (s.index.year <= b)]
+    lo = pd.Timestamp(a, tz="UTC")
+    hi = pd.Timestamp(b, tz="UTC") + pd.Timedelta(days=1)
+    return s[(s.index >= lo) & (s.index < hi)]
 
 
 def saatlik(s):
