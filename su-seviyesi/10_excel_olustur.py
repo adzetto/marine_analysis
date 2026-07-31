@@ -355,7 +355,24 @@ def main():
                    "07_non_tidal.py", bic["not"])
     r += 2
 
+    # Ozet iki kaynaktan derlenir.
+    #
+    # 03_nontidal_ozet.csv bir donemde eksik kalabiliyor (07 eskiden her
+    # kosuda ustune yaziyordu). 10_donem_karsilastirma.csv ise butun
+    # donemleri tasiyor ama en dusuk/en yuksek sutunlari yok. Ikisi
+    # birlestirilir; boylece eski ciktilarla da dogru kitap uretiliyor.
     oz = csv_oku("03_nontidal_ozet.csv")
+    dk0 = csv_oku("10_donem_karsilastirma.csv")
+    if dk0 is not None:
+        t = dk0[["donem", "nontidal_ortalama_cm", "nontidal_std_cm",
+                 "nontidal_aralik_cm", "TD"]].rename(columns={
+            "nontidal_ortalama_cm": "ortalama_cm",
+            "nontidal_std_cm": "std_cm",
+            "nontidal_aralik_cm": "aralik_cm"})
+        if oz is not None:
+            t = t.merge(oz[["donem", "min_cm", "max_cm"]], on="donem",
+                        how="left")
+        oz = t
     if oz is not None:
         for j, b in enumerate(["Donem", "Ortalama (cm)", "Std sapma (cm)",
                                "En dusuk (cm)", "En yuksek (cm)",
@@ -366,9 +383,11 @@ def main():
             ws.write(r, 0, s.donem, bic["met"])
             for j, k in enumerate(["ortalama_cm", "std_cm", "min_cm",
                                    "max_cm", "aralik_cm", "TD"], 1):
-                ws.write_number(r, j, float(s[k]),
-                                bic["vur"] if k in ("std_cm", "TD")
-                                else bic["s2"])
+                v = s.get(k)
+                if pd.notna(v):
+                    ws.write_number(r, j, float(v),
+                                    bic["vur"] if k in ("std_cm", "TD")
+                                    else bic["s2"])
             r += 1
         r += 1
         ws.write(r, 0, "ONEMLI: artigin ORTALAMASI tanimi geregi sifirdir "
@@ -378,12 +397,16 @@ def main():
                        "temsil eden buyukluk STANDART SAPMA ve asagidaki "
                        "yuzdeliklerdir.", bic["not"])
         ws.set_row(r, 46); r += 2
-        ws.write(r, 0, "Makale ile karsilastirma (Tablo 3, Bozyazi)",
-                 bic["alt"]); r += 1
+        ws.write(r, 0, f"Makale ile karsilastirma (Tablo 3, Bozyazi) - "
+                       f"{SLUG} donemi", bic["alt"]); r += 1
         for j, b in enumerate(["Buyukluk", "Makale", "Bizim"]):
             ws.write(r, j, b, bic["bas"])
         r += 1
-        ana = oz.iloc[0]
+        # Karsilastirma MAKALE PENCERESIYLE yapilmali; ilk satir alinirsa
+        # tabloya hangi donem once yazildiysa o kiyaslanir ve yanlis
+        # sonuc cikar.
+        sr = oz[oz.donem == SLUG]
+        ana = sr.iloc[0] if len(sr) else oz.iloc[0]
         for et, mv, bv in [("Standart sapma (cm)", MAKALE_NONTIDAL_STD,
                             float(ana.std_cm)),
                            ("TD", MAKALE_TD, float(ana.TD)),
