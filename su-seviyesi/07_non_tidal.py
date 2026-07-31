@@ -300,7 +300,17 @@ def main():
         print()
 
     # --- makale ile karsilastirma ---
-    ist, artik = ozet["makale penceresi"]
+    #
+    # Donem adi cagirma bicimine gore degisiyor: dogrudan calistirildiginda
+    # ortak.DONEMLER'den "makale penceresi", 13_donem_kosucu.py'den
+    # cagrildiginda "makale"/"son5"/"son10"/"tum". Ad sabit varsayilirsa
+    # KeyError ile duruluyor; islenen donem hangisiyse o alinir.
+    anahtar = next((k for k in ("makale penceresi", "makale") if k in ozet),
+                   None)
+    if anahtar is None:
+        print(f"\ntablolar ve figurler yazildi: {TABLO} , {FIG}")
+        return
+    ist, artik = ozet[anahtar]
     print("\n" + "=" * 76)
     print("DOGRULAMA: Ozturk & Yuksel (2023) Tablo 3, Bozyazi")
     print("=" * 76)

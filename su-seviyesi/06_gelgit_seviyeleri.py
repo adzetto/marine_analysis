@@ -122,8 +122,8 @@ def main():
         "Bozyazi - 19 yillik astronomik gelgit ongorusu (MSL'e gore)",
         "dogrusal egim ve mevsimsel bilesenler (SA,SSA,MSM,MM,MSF,MF) haric",
     ])
-    print("yazildi: bozyazi_ongoru_19yil.dat.gz , "
-          "bozyazi_ongoru_19yil_mevsimsiz.dat.gz")
+    print(f"yazildi: bozyazi_ongoru_19yil_{kod}.dat.gz , "
+          f"bozyazi_ongoru_19yil_mevsimsiz_{kod}.dat.gz")
 
     tepe, dip = uc_noktalar(y)
     HW, LW = y[tepe], y[dip]

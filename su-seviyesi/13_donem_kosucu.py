@@ -70,6 +70,30 @@ def donemler(s):
     ]
 
 
+KARSILASTIRMA = "10_donem_karsilastirma.csv"
+
+
+def birikimli_yaz(yeni):
+    """Donem ozetini var olan tabloya EKLER.
+
+    Betik donem basina ayri bir surecte calisabildigi icin (bkz.
+    00_hepsini_calistir.py) tabloyu dogrudan yazmak onceki donemleri
+    siliyordu: her kosu tek satirlik bir dosya birakiyordu. Bu yuzden
+    once diskteki tablo okunur, ayni donem varsa guncellenir, sonra
+    hepsi birlikte yazilir.
+    """
+    yol = TABLO / KARSILASTIRMA
+    d = pd.DataFrame(yeni)
+    if yol.exists():
+        eski = pd.read_csv(yol)
+        eski = eski[~eski.donem.isin(d.donem)]
+        d = pd.concat([eski, d], ignore_index=True)
+    sira = {"makale": 0, "son5": 1, "son10": 2, "tum": 3}
+    d = d.sort_values("donem", key=lambda s: s.map(sira).fillna(9))
+    d.to_csv(yol, index=False)
+    return d
+
+
 def famagusta_tablosu(h, yol, msl):
     """Hocanin ornek verdigi Tablo 2-2 bicimi: ad, genlik [m], faz [deg]."""
     sat = []
@@ -164,8 +188,7 @@ def main():
             "nontidal_aralik_cm": round((artik.max()-artik.min())*100, 2),
             "TD": round(TD, 4),
         })
-        pd.DataFrame(ozet).to_csv(TABLO / "10_donem_karsilastirma.csv",
-                                  index=False)
+        birikimli_yaz(ozet)
 
         # gelgit duzeyleri ve figurler, o donemin cozumuyle
         for betik in ("06_gelgit_seviyeleri.py", "07_non_tidal.py"):
@@ -175,9 +198,10 @@ def main():
 
     if not ozet:
         return
-    d = pd.DataFrame(ozet)
+    # Diskteki tablo butun donemleri tasiyor; ozet yalniz bu kosudakini.
+    d = pd.read_csv(TABLO / KARSILASTIRMA)
     print("=" * 78)
-    print("DONEMLER YAN YANA")
+    print(f"DONEMLER YAN YANA  ({len(d)} donem)")
     print("=" * 78)
     print(f"  {'donem':<8}{'yil':>6}{'MSL m':>9}{'M2 m':>9}{'F':>7}"
           f"{'std cm':>9}{'TD':>7}{'aralik cm':>11}")
