@@ -55,18 +55,26 @@ def uc_noktalar(y):
 
 
 def main():
+    # 13_donem_kosucu.py bu betigi donem kodu vererek cagirabiliyor.
+    kod, a, b = "makale_penceresi", ANALIZ_A, ANALIZ_B
+    if len(sys.argv) > 1:
+        kod = sys.argv[1]
+        d = pd.read_csv(TABLO / "10_donem_karsilastirma.csv")
+        r = d[d.donem == kod].iloc[-1]
+        a, b = r.baslangic, r.bitis
+
     s = oku()
-    x = kes(s, ANALIZ_A, ANALIZ_B)
+    x = kes(s, a, b)
     msl_gozlem = float(x.mean())
 
     print("=" * 76)
-    print(f"GELGIT DUZEYLERI - Bozyazi   (bilesenler {ANALIZ_A}-{ANALIZ_B})")
+    print(f"GELGIT DUZEYLERI - Bozyazi   (bilesenler {a} .. {b})")
     print("=" * 76)
     print(f"gozlenen MSL (ayiklanmis veri) = {msl_gozlem:.4f} m "
           f"(istasyon yerel datumu)")
 
     # Cozum 05'te bir kez yapilip saklandi; burada tekrar cozulmez.
-    coef = coz_yukle("makale_penceresi")
+    coef = coz_yukle(kod)
     h = bilesen_sozlugu(coef)
 
     # --- 19 yillik astronomik ongoru ---
@@ -76,7 +84,7 @@ def main():
     # eklenince tahmin ~35 cm suruklenir ve HAT-LAT yapay olarak buyur.
     # HAT/LAT tanimi geregi ASTRONOMIK uc degerlerdir; ne meteorolojik
     # katki ne de ekstrapole edilmis bir egilim girmelidir.
-    t = pd.date_range(ANALIZ_A, periods=int(ONGORU_YIL * 365.25 * 24 * 60
+    t = pd.date_range(a, periods=int(ONGORU_YIL * 365.25 * 24 * 60
                                             / ADIM_DK),
                       freq=f"{ADIM_DK}min")
     ong = kur(pd.Series(0.0, index=t.tz_localize("UTC")), coef,
@@ -106,11 +114,11 @@ def main():
     # 19 yillik ongoruler saklanir; figur/tablo degistirilmek istendiginde
     # hepsi bastan hesaplanmasin.
     ti = t.tz_localize("UTC")
-    yaz(pd.Series(y, index=ti), "bozyazi_ongoru_19yil.dat", [
+    yaz(pd.Series(y, index=ti), f"bozyazi_ongoru_19yil_{kod}.dat", [
         "Bozyazi - 19 yillik ASTRONOMIK gelgit ongorusu (MSL'e gore)",
         "dogrusal egim haric, SNR>2 bilesenler, 10 dk adim",
     ])
-    yaz(pd.Series(y2, index=ti), "bozyazi_ongoru_19yil_mevsimsiz.dat", [
+    yaz(pd.Series(y2, index=ti), f"bozyazi_ongoru_19yil_mevsimsiz_{kod}.dat", [
         "Bozyazi - 19 yillik astronomik gelgit ongorusu (MSL'e gore)",
         "dogrusal egim ve mevsimsel bilesenler (SA,SSA,MSM,MM,MSF,MF) haric",
     ])
@@ -221,7 +229,7 @@ def main():
 
     # --- yaz ---
     TABLO.mkdir(parents=True, exist_ok=True)
-    yol = TABLO / "02_gelgit_duzeyleri.csv"
+    yol = TABLO / f"02_gelgit_duzeyleri_{kod}.csv"
     haric = {"HAT": HAT2, "LAT": LAT2}
     with open(yol, "w", encoding="utf-8") as fo:
         fo.write("duzey,aciklama,su_seviyesi_m_MSL,"

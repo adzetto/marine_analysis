@@ -202,7 +202,30 @@ def main():
                    "Kaynak: 05_harmonik_analiz.py", bic["not"])
     ws.set_row(r, 26); r += 2
 
+    # --- once hocanin istedigi bicimde (Famagusta Tablo 2-2) ---
+    fam = csv_oku(f"09_famagusta_bicimi_{SLUG}.csv")
+    if fam is None:
+        fam = csv_oku("09_famagusta_bicimi_makale.csv")
+    if fam is not None:
+        ws.write(r, 0, "Hocanin istedigi bicimde (Famagusta Tablo 2-2)",
+                 bic["alt"]); r += 1
+        for j, b in enumerate(fam.columns):
+            ws.write(r, j, str(b), bic["bas"])
+        r += 1
+        for _, s in fam.iterrows():
+            ws.write(r, 0, str(s.iloc[0]), bic["met"])
+            for j in (1, 2):
+                v = s.iloc[j]
+                if pd.notna(v):
+                    ws.write_number(r, j, float(v),
+                                    bic["s4"] if j == 1 else bic["s1"])
+            r += 1
+        r += 2
+
+    ws.write(r, 0, "Cozulen butun bilesenler", bic["alt"]); r += 1
     bil = csv_oku(f"01_gelgit_bilesenleri_{SLUG}.csv")
+    if bil is None:
+        bil = csv_oku("01_gelgit_bilesenleri_makale.csv")
     if bil is not None:
         bas = ["Bilesen", "Genlik (m)", "Genlik (cm)", "Hata (cm)",
                "Faz (derece)", "SNR", "Makale (cm)"]
@@ -411,6 +434,54 @@ def main():
         ws.write_number(r, 1, float(yil[y]), bic["s4"])
         ws.write_number(r, 2, int(say[y]), bic["tam"])
         r += 1
+
+    # --- azami araligin yillik oynamasi ---
+    yl = csv_oku("07_yillik_azami_aralik.csv")
+    if yl is not None:
+        r += 2
+        ws.write(r, 0, "Gelgit disi azami araligin yillik oynamasi",
+                 bic["alt"]); r += 1
+        ws.write(r, 0, "Azami aralik TEK BIR OLAYA baglidir. Asagida "
+                       "yildan yila ne kadar oynadigi goruluyor; standart "
+                       "sapma ise cok daha kararli. Makaleyle aradaki fark "
+                       "bu sacilmanin icinde kaliyor. Kaynak: "
+                       "09_azami_aralik_tani.py", bic["not"])
+        ws.set_row(r, 32); r += 1
+        for j, b in enumerate(["Yil", "std (cm)", "en dusuk (cm)",
+                               "en yuksek (cm)", "ARALIK (cm)"]):
+            ws.write(r, j, b, bic["bas"])
+        r += 1
+        for _, s in yl.iterrows():
+            ws.write_number(r, 0, int(s.yil), bic["tam"])
+            for j, k in enumerate(["std_cm", "min_cm", "max_cm",
+                                   "aralik_cm"], 1):
+                ws.write_number(r, j, float(s[k]),
+                                bic["vur"] if k == "aralik_cm"
+                                else bic["s2"])
+            r += 1
+
+    # --- cok istasyonlu dogrulama ---
+    ci = csv_oku("08_cok_istasyon_dogrulama.csv")
+    if ci is not None:
+        r += 2
+        ws.write(r, 0, "Zincirin dort istasyonda dogrulanmasi", bic["alt"])
+        r += 1
+        ws.write(r, 0, "Ayni ayiklama ve ayni harmonik cozum, makalenin "
+                       "sonuc verdigi diger Levantin istasyonlarina da "
+                       "uygulandi. Kaynak: 12_cok_istasyon_dogrula.py",
+                 bic["not"])
+        ws.set_row(r, 26); r += 1
+        for j, b in enumerate(ci.columns):
+            ws.write(r, j, str(b), bic["bas"])
+        r += 1
+        for _, s in ci.iterrows():
+            for j, k in enumerate(ci.columns):
+                v = s[k]
+                if isinstance(v, str):
+                    ws.write(r, j, v, bic["met"])
+                elif pd.notna(v):
+                    ws.write_number(r, j, float(v), bic["s3"])
+            r += 1
 
     kar = csv_oku("06_istasyon_yillik_sapma.csv")
     if kar is not None:

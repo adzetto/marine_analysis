@@ -17,14 +17,16 @@ data/bozyazi_artik_*.dat.gz
 data/bozyazi_ongoru_*.dat.gz
 BOZYAZI_SU_SEVIYESI.xlsx
 
-# Elsevier telifli makale - acik depoya konulamaz.
-yalcinyuksel-2023.pdf
-
-# Yazisma ekran goruntuleri (ozel icerik) ve hocanin gonderdigi ham arsiv.
+# Yerel calisma malzemesi: Elsevier telifli makale, hocayla yapilan
+# yazismanin ekran goruntuleri ve gonderdigi ham arsiv. Hicbiri acik bir
+# depoya konulamaz.
+belgeler/
 *.jpeg
 *.jpg
-tudes_raw/
-tudes.rar
+*.rar
+*.pdf
+# ...ama uretilen vektorel figurler depoda kalsin.
+!figures/*.pdf
 
 __pycache__/
 *.pyc

@@ -203,7 +203,17 @@ def main():
     s = oku()
     ozet = {}
 
-    for ad, a, b in DONEMLER:
+    # 13_donem_kosucu.py bu betigi donem kodu vererek cagirabiliyor.
+    # O durumda cozum zaten kaydedilmis olur ve yalniz o donem islenir.
+    if len(sys.argv) > 1:
+        kod = sys.argv[1]
+        d = pd.read_csv(TABLO / "10_donem_karsilastirma.csv")
+        r = d[d.donem == kod].iloc[-1]
+        donem_listesi = [(kod, r.baslangic, r.bitis)]
+    else:
+        donem_listesi = DONEMLER
+
+    for ad, a, b in donem_listesi:
         x = kes(s, a, b)
         print("=" * 76)
         print(f"{ad.upper()}  ({a}-{b})   n = {len(x):,}")

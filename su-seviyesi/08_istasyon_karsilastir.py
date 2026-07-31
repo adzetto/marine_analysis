@@ -65,7 +65,17 @@ DUZ_KOSU = 12
 
 
 def istasyon_yukle(ad):
-    """Bir istasyonun ham parcalarini okuyup ayiklanmis seri dondurur."""
+    """Bir istasyonun ayiklanmis serisini dondurur.
+
+    Once depoda duran <istasyon>_temiz.dat.gz aranir (Colab'da ham parcalar
+    bulunmadigi icin gereklidir); yoksa ham JSON parcalarindan uretilir.
+    """
+    from ortak import oku
+    try:
+        return oku(f"{ad}_temiz.dat")
+    except FileNotFoundError:
+        pass
+
     kls = VERI / "ham" / ad
     if not kls.exists():
         return None

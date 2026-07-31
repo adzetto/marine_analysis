@@ -72,6 +72,24 @@ Yayımlanmış Bozyazı değerleri (genlikler cm):
 
 Gelgit dışı: azami aralık 129 cm, ortalama ≈0, σ = 10,43 cm, TD = 1,06.
 
+### Azami aralık neden tutmuyor
+
+Dört büyüklükten üçü (σ, TD, ortalama) birebir tutuyor; azami aralıkta
+fark var (bizde ~97, makalede 129 cm). `09_azami_aralik_tani.py` sebebi
+ölçüyor:
+
+- **Azami aralık tek bir olaya bağlı bir istatistiktir.** Kayıttaki yıllık
+  azami aralık 59,8 ile 116,1 cm arasında oynuyor — yani **56 cm**'lik bir
+  saçılma. Aynı yıllarda σ ise 7,7–12,6 cm bandında kalıyor. 32 cm'lik fark
+  bu saçılmanın içinde kalıyor.
+- **Eksik altı ay.** Makale 01.01.2009'da başlıyor, portalda kayıt
+  06.07.2009'da. Aradaki Ocak–Haziran 2009 bir kış fırtınası mevsimini
+  içeriyor.
+- **Ayıklama fazla sert değil.** Sağlam yıllarda (2010–2019) dört katmanlı
+  ayıklama ile yalnız 1+2 katmanı arasındaki fark 0,6–15,7 cm. Atılan
+  ölçümlerin %72–84'ü tek ölçümlük olaylar, en uzunu 45–75 dakika — yani
+  saatler süren gerçek kabarmalar değil, yalnız sıçramalar.
+
 ## Betikler
 
 Sırayla çalıştırılır:
@@ -86,16 +104,49 @@ Sırayla çalıştırılır:
 | `06_gelgit_seviyeleri.py` | Standart gelgit düzeyleri tablosu |
 | `07_non_tidal.py` | Gelgit dışı bileşen, PDF/CDF, TD |
 | `08_istasyon_karsilastir.py` | Komşu istasyonlarla karşılaştırma (trend sorusu) |
+| `09_azami_aralik_tani.py` | Makaleyle kalan farkın kaynağını ölçer |
 | `10_excel_olustur.py` | Bütün sonuçları tek Excel kitabında toplar |
+| `11_sonuclari_pushla.py` | Sonuçları GitHub'a gönderir |
+| `12_cok_istasyon_dogrula.py` | Zinciri 4 istasyonda birden sınar |
+| `13_donem_kosucu.py` | Aynı analizi dört pencerede ayrı ayrı çalıştırır |
 
-`ortak.py` paylaşılan sabitleri ve işlevleri tutar — tek tanım yeri.
+`ortak.py` paylaşılan sabitleri ve işlevleri, `harita.py` figürlerdeki
+konum haritasını tutar.
 
-İki defter var:
+### Defterler
+
+**Çalıştırmak için tek gereken:**
+[`calistir.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/calistir.ipynb)
+— iki hücre: kurulum + jeton, sonra her şeyi çalıştıran tek hücre
+(dört dönem, dört istasyon doğrulaması, Excel, GitHub'a gönderim).
 
 | Defter | Ne yapar |
 |---|---|
-| [`colab_baslat.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/colab_baslat.ipynb) | Zinciri çalıştırır |
+| [`calistir.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/calistir.ipynb) | **Her şeyi tek hücrede** çalıştırır ve gönderir |
 | [`analiz_raporu.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/analiz_raporu.ipynb) | Sonuçları formülleri ve grafikleriyle anlatır |
+| [`donemler.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/donemler.ipynb) | Dönemleri tek tek çalıştırmak isteyenler için |
+| [`colab_baslat.ipynb`](https://colab.research.google.com/github/adzetto/marine_analysis/blob/main/su-seviyesi/colab_baslat.ipynb) | Yalnız makale penceresi, adım adım |
+
+## Ayıklama yöntemi
+
+Dört katman, uluslararası su seviyesi kalite denetimi standardındaki
+(IOOS/NOAA **QARTOD**, *Manual for Real-Time Quality Control of Water Level
+Data*) testlere karşılık gelir:
+
+| Katman | Ölçüt | QARTOD karşılığı |
+|---|---|---|
+| 1 | \|x − medyan\| > 2,0 m | **Gross Range Test** |
+| 2 | 30 günlük medyandan > 0,8 m sapma | datum kayması / **Climatology Test** |
+| 3 | 2 saatlik medyandan > 0,10 m sapma | **Spike Test** |
+| 4 | aynı değer ≥ 12 kez üst üste | **Flat Line Test** |
+
+Sağlamlık için ortalama/standart sapma yerine medyan ve medyan mutlak
+sapma kullanılır (σ̂ = 1,4826 · MAD); tek bir uç değer bunları kaydıramaz.
+
+`09_azami_aralik_tani.py` ayıklamanın gerçek sinyali kesmediğini ölçer:
+sağlam yıllarda dört katman ile yalnız 1+2 katmanı arasındaki fark
+0,6–15,7 cm, atılan ölçümlerin %72–84'ü tek ölçümlük olaylar ve en uzunu
+45–75 dakika — yani saatler süren gerçek kabarmalar değil.
 
 ## Bir kez çöz, çok kez kullan
 
